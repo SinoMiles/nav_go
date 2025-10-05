@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Theme from '@/models/Theme';
 import { withAdminAuth } from '@/lib/middleware';
@@ -20,7 +20,7 @@ const THEME_DEFINITIONS: Record<AllowedTheme, ThemeDefinition> = {
     title: '全屏分屏',
     description: '全屏分屏展示，支持左右切换和自动播放，适合演示和展示场景',
     version: '1.0.0',
-    author: 'NavCraft',
+    author: 'NavGo',
     previewUrl: '/themes/fullscreen-section/preview.png',
     configSchema: {},
   },
@@ -29,7 +29,7 @@ const THEME_DEFINITIONS: Record<AllowedTheme, ThemeDefinition> = {
     description:
       '集成搜索、收藏、评分、热门推荐、夜间模式等高级功能的完整导航系统',
     version: '2.0.0',
-    author: 'NavCraft Team',
+    author: 'NavGo Team',
     previewUrl: '/themes/sidebar-nav/preview.png',
     configSchema: {
       primaryColor: {

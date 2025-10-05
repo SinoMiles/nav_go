@@ -123,7 +123,7 @@ export default function FullscreenSectionTheme({
               {siteName?.charAt(0) ?? 'N'}
             </div>
             <div>
-              <h1 className="text-2xl font-semibold">{siteName || 'NavCraft'}</h1>
+              <h1 className="text-2xl font-semibold">{siteName || 'NavGo'}</h1>
               <p className="text-sm text-white/70">全屏沉浸式导航体验</p>
             </div>
           </div>
@@ -295,7 +295,7 @@ export default function FullscreenSectionTheme({
 
       <footer className="relative z-10 border-t border-white/10 bg-slate-950/70 px-10 py-6 text-sm text-white/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-none flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>© {currentYear} {siteName || 'NavCraft'} · 全屏沉浸式导航</div>
+          <div>© {currentYear} {siteName || 'NavGo'} · 全屏沉浸式导航</div>
           <div className="flex flex-wrap items-center gap-4 text-xs">
             <a href="/" className="hover:text-white">
               返回首页

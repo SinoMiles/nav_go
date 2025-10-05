@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Theme from '@/models/Theme';
 import Settings from '@/models/Settings';
@@ -12,7 +12,7 @@ const THEME_DEFINITIONS = [
     title: '全屏分屏',
     description: '全屏分屏展示，支持左右切换和自动播放，适合演示和展示场景',
     version: '1.0.0',
-    author: 'NavCraft',
+    author: 'NavGo',
     installed: true,
     enabled: false,
     configSchema: {},
@@ -23,7 +23,7 @@ const THEME_DEFINITIONS = [
     description:
       '集成搜索、收藏、评分、热门推荐、夜间模式等高级功能的完整导航系统',
     version: '2.0.0',
-    author: 'NavCraft Team',
+    author: 'NavGo Team',
     installed: true,
     enabled: false,
     configSchema: {
@@ -87,7 +87,7 @@ export async function POST(_req: NextRequest) {
     if (!settings) {
       await Settings.create({
         activeTheme: 'fullscreen-section',
-        siteName: 'NavCraft',
+        siteName: 'NavGo',
         siteDescription: '基于 Next.js 的可拔插导航系统',
         themeConfigs: {},
       });

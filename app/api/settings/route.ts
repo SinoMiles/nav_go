@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       // 创建默认设置
       const newSettings = new Settings({
         activeTheme: 'fullscreen-section',
-        siteName: 'NavCraft',
+        siteName: 'NavGo',
         themeConfigs: {},
       });
       await newSettings.save();

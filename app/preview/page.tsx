@@ -86,7 +86,7 @@ export default async function PreviewPage(props: {
 
     const themeConfig = await getThemeConfig(theme);
     const settings = await Settings.findOne({});
-    const siteName = settings?.siteName || "NavCraft";
+    const siteName = settings?.siteName || "NavGo";
 
     const categories = await Category.find({ enabled: true })
       .sort({ order: 1, createdAt: 1 })

@@ -20,7 +20,7 @@ const SettingsSchema = new Schema<ISettings>(
     },
     siteName: {
       type: String,
-      default: 'NavCraft',
+      default: 'NavGo',
     },
     siteDescription: {
       type: String,

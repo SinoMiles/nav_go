@@ -1,4 +1,4 @@
-# NavCraft - 快速开始
+# NavGo - 快速开始
 
 ## 安装依赖
 
@@ -28,7 +28,7 @@ npm run dev
 ## 登录管理后台
 
 - 登录地址: http://localhost:3000/admin/login
-- 邮箱: **admin@navcraft.com**
+- 邮箱: **admin@NavGo.com**
 - 密码: **admin**
 
 ## 使用步骤

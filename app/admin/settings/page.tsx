@@ -215,7 +215,7 @@ export default function SettingsPage() {
           <div className="mt-5 grid gap-4 text-sm text-slate-300/80 md:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs uppercase tracking-wide text-slate-400">版本</p>
-              <p className="mt-2 text-white">NavCraft v1.0.0</p>
+              <p className="mt-2 text-white">NavGo v1.0.0</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs uppercase tracking-wide text-slate-400">技术栈</p>

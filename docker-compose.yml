@@ -1,17 +1,17 @@
 version: '3.8'
 
 services:
-  navcraft:
+  NavGo:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: navcraft-app
+    container_name: NavGo-app
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://NavCraft:3afnijdxHaMrJHsT@39.98.161.189:27017/navcraft
+      - MONGODB_URI=mongodb://NavGo:3afnijdxHaMrJHsT@39.98.161.189:27017/NavGo
       - NEXTAUTH_SECRET=your-nextauth-secret-key-change-this-in-production
       - NEXTAUTH_URL=http://localhost:3000
       - JWT_SECRET=your-jwt-secret-key-change-this-in-production
@@ -19,8 +19,8 @@ services:
       - ./uploads:/app/uploads
       - ./public/themes:/app/public/themes
     networks:
-      - navcraft-network
+      - NavGo-network
 
 networks:
-  navcraft-network:
+  NavGo-network:
     driver: bridge

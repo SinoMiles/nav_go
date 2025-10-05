@@ -1,4 +1,4 @@
-# NavCraft 快速启动指南
+# NavGo 快速启动指南
 
 ## 1. 安装依赖
 
@@ -11,7 +11,7 @@ npm install
 确保 `.env.local` 文件中的数据库连接正确:
 
 ```env
-MONGODB_URI=mongodb://NavCraft:3afnijdxHaMrJHsT@39.98.161.189:27017/navcraft?authSource=admin
+MONGODB_URI=mongodb://NavGo:3afnijdxHaMrJHsT@39.98.161.189:27017/NavGo?authSource=admin
 ```
 
 ## 3. 启动开发服务器

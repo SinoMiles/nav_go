@@ -23,7 +23,7 @@ export default async function HomePage() {
 
     // 获取站点设置
     const settings = await Settings.findOne({});
-    const siteName = settings?.siteName || 'NavCraft';
+    const siteName = settings?.siteName || 'NavGo';
 
     // 获取分类和链接
     const categories = await Category.find({ enabled: true })
@@ -61,10 +61,10 @@ export default async function HomePage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            NavCraft
+            NavGo
           </h1>
           <p className="text-gray-600 mb-8">
-            欢迎使用NavCraft导航系统
+            欢迎使用NavGo导航系统
           </p>
           <p className="text-sm text-gray-500">
             请先配置数据库连接并初始化数据

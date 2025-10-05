@@ -1,9 +1,9 @@
-﻿{
+{
   "name": "sidebar-nav",
   "title": "侧边栏导航",
   "description": "集成搜索、收藏、评分、热门推荐、暗色模式等功能的导航主题。",
   "version": "2.0.0",
-  "author": "NavCraft Team",
+  "author": "NavGo Team",
   "configSchema": {
     "primaryColor": {
       "type": "color",

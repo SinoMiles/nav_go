@@ -198,7 +198,7 @@ export default function AdminDashboard() {
             <div className="mt-4 grid gap-3 text-sm text-slate-200/90">
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                 <p className="text-xs uppercase tracking-wide text-slate-300">版本信息</p>
-                <p className="mt-1 text-white">NavCraft v1.0.0</p>
+                <p className="mt-1 text-white">NavGo v1.0.0</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                 <p className="text-xs uppercase tracking-wide text-slate-300">运行环境</p>

@@ -210,7 +210,7 @@ export default function ThemesPage() {
 
                 <div className="grid gap-2 text-xs text-slate-400 sm:grid-cols-3">
                   <span>版本：{theme.version}</span>
-                  <span>作者：{theme.author || 'NavCraft 团队'}</span>
+                  <span>作者：{theme.author || 'NavGo 团队'}</span>
                   <span>标识：{theme.name}</span>
                 </div>
 

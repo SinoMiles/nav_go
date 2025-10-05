@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'NavCraft - 智能导航站',
+  title: 'NavGo - 智能导航站',
   description: '基于Next.js的可切换主题导航系统',
 };
 

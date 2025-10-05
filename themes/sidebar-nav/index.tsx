@@ -740,7 +740,7 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
           </div>
           <div className="mt-6 flex flex-col gap-2 border-t border-slate-200 pt-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
             <span>© {new Date().getFullYear()} {siteName || "导航站"} 版权所有</span>
-            <span>界面由 NavSite 设计与驱动</span>
+            <span>界面由 NavGo 设计与驱动</span>
           </div>
         </footer>
       </div>
@@ -764,3 +764,9 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
     </div>
   );
 }
+
+
+
+
+
+

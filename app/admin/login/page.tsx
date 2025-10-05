@@ -51,7 +51,7 @@ export default function LoginPage() {
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-900 text-sm font-semibold text-white">
             N
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900">NavCraft 管理后台</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">NavGo 管理后台</h1>
           <p className="text-sm text-slate-400">使用管理员账号登录以管理站点内容</p>
         </div>
 
@@ -70,7 +70,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
               required
-              placeholder="admin@navcraft.com"
+              placeholder="admin@NavGo.com"
               autoComplete="email"
             />
           </div>
@@ -98,7 +98,7 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-6 text-center text-xs text-slate-400">
-          默认账号: admin@navcraft.com / admin
+          默认账号: admin@NavGo.com / admin
         </p>
       </div>
     </div>
