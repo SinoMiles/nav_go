@@ -7,7 +7,7 @@ type SidebarProps = {
   activeRoot: string | null;
   onRootSelect: (rootId: string | null) => void;
   onOpenSubmit: () => void;
-  floating: boolean;
+  footerOffset: number;
 };
 
 export const Sidebar = ({
@@ -17,18 +17,17 @@ export const Sidebar = ({
   activeRoot,
   onRootSelect,
   onOpenSubmit,
-  floating,
+  footerOffset,
 }: SidebarProps) => {
-  const wrapperClass = floating ? "lg:sticky lg:top-10" : "lg:relative";
+  const style = footerOffset > 0 ? { paddingBottom: `${footerOffset}px` } : undefined;
 
   return (
-    <aside className={`hidden flex-col gap-6 lg:flex lg:self-start ${wrapperClass}`}>
+    <aside
+      className="hidden flex-col gap-6 lg:flex lg:self-start lg:sticky lg:top-10"
+      style={style}
+    >
       <div className="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-slate-50 px-6 py-6 shadow-xl">
         <div className="space-y-2">
-          <span className="inline-flex items-center gap-2 text-xs font-medium tracking-[0.2em] text-slate-400">
-            <span className="h-1 w-6 rounded-full bg-[color:var(--theme-accent)]/50" style={{ ['--theme-accent' as any]: accent }} />
-            站点导航
-          </span>
           <h1 className="text-2xl font-semibold text-slate-900">{siteName || "NavGo"}</h1>
           <p className="text-sm text-slate-500">精选优质站点，快速抵达你的灵感目的地。</p>
         </div>

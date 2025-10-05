@@ -1,31 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 
-export const useFloatingSidebar = (buffer = 120) => {
+export const useFloatingSidebar = (buffer = 160) => {
   const footerRef = useRef<HTMLElement | null>(null);
-  const [floating, setFloating] = useState(true);
+  const [offset, setOffset] = useState(0);
 
   useEffect(() => {
-    const updateFloatingState = () => {
+    const updateOffset = () => {
       const footer = footerRef.current;
       if (!footer) {
-        setFloating(true);
+        setOffset(0);
         return;
       }
 
       const rect = footer.getBoundingClientRect();
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      setFloating(rect.top > viewportHeight - buffer);
+      const distance = rect.top - viewportHeight;
+      const overlap = distance < buffer ? buffer - distance : 0;
+      setOffset(overlap > 0 ? overlap : 0);
     };
 
-    updateFloatingState();
-    window.addEventListener("scroll", updateFloatingState, { passive: true });
-    window.addEventListener("resize", updateFloatingState);
+    updateOffset();
+    window.addEventListener("scroll", updateOffset, { passive: true });
+    window.addEventListener("resize", updateOffset);
 
     return () => {
-      window.removeEventListener("scroll", updateFloatingState);
-      window.removeEventListener("resize", updateFloatingState);
+      window.removeEventListener("scroll", updateOffset);
+      window.removeEventListener("resize", updateOffset);
     };
   }, [buffer]);
 
-  return { footerRef, floating };
+  return { footerRef, offset };
 };

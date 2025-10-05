@@ -10,6 +10,7 @@ import { ScrollTopButton } from "./components/ScrollTopButton";
 import { Sidebar } from "./components/Sidebar";
 import { MobileHeader } from "./components/MobileHeader";
 import { MobileCategoryDrawer } from "./components/MobileCategoryDrawer";
+import { MobileBottomBar } from "./components/MobileBottomBar";
 import { SearchPanel } from "./components/SearchPanel";
 import { ActiveRootSection } from "./components/ActiveRootSection";
 import { SectionList } from "./components/SectionList";
@@ -55,7 +56,7 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
     [accent, surface, background],
   );
 
-  const { footerRef, floating } = useFloatingSidebar(160);
+  const { footerRef, offset: sidebarOffset } = useFloatingSidebar(160);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 320);
@@ -228,6 +229,19 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
     setShowSubmit(false);
   }, []);
 
+  const handleScrollTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleClearFilter = useCallback(() => {
+    setActiveRoot(null);
+    setActiveChild(null);
+    setSearchKeyword("");
+    setSearchResults([]);
+    setSearchInput("");
+    closeMobileMenu();
+  }, [closeMobileMenu]);
+
   return (
     <div className="min-h-screen bg-[color:var(--theme-background)] text-slate-800" style={themeVars}>
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
@@ -247,7 +261,7 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
               activeRoot={activeRoot}
               onRootSelect={handleRootSelect}
               onOpenSubmit={openSubmitModal}
-              floating={floating}
+              footerOffset={sidebarOffset}
             />
 
             <main className="space-y-6 sm:space-y-8 lg:space-y-10">
@@ -380,6 +394,15 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
         onRootSelect={handleRootSelect}
         onChildSelect={handleChildSelect}
         onOpenSubmit={openSubmitModal}
+      />
+
+      <MobileBottomBar
+        accent={accent}
+        hasActiveFilter={Boolean(activeRoot || searchKeyword)}
+        onOpenMenu={openMobileMenu}
+        onOpenSubmit={openSubmitModal}
+        onClearFilter={handleClearFilter}
+        onScrollTop={handleScrollTop}
       />
 
       <ScrollTopButton visible={showScrollTop} accent={accent} />
