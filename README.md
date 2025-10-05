@@ -16,125 +16,183 @@
 
 </div>
 
-## 📌 概览 | Overview
+<div align="right">
+  <a href="#navgo-中文版">中文</a> ｜ <a href="#navgo-english-version">English</a>
+</div>
 
-- **中文**：NavGo 是一款面向团队与创作者的导航管理平台，内置多套主题、丰富的后台功能与可扩展的搜索引擎配置，帮助你快速打造风格统一、层次清晰的导航站。
-- **English**: NavGo empowers teams and curators to launch beautiful navigation portals with theming, structured categorisation, powerful search routing, and a refined admin console.
+<details open>
+<summary id="navgo-中文版">🇨🇳 NavGo 中文版</summary>
 
----
+### 📌 项目简介
 
-## ✨ 项目亮点 | Key Highlights
+NavGo 是一款面向团队与创作者的导航管理平台，内置多套主题、后台模块与搜索配置，帮助你快速搭建风格统一、层次清晰的导航站点。
 
-- 🎯 **分级目录 / Hierarchical Categories**：支持一、二级分类，自动聚合展示，提升内容可达性。
-- 🔍 **智能搜索 / Smart Search**：站内检索与自定义搜索引擎切换无缝衔接，支持外部跳转。
-- 🎨 **主题定制 / Theme Customisation**：多主题模板配色可配置，轻松匹配品牌视觉。
-- 🛠️ **后台管理 / Admin Console**：涵盖分类、链接、主题、搜索引擎、系统设置等模块。
-- 🌐 **国际化文案 / Refined Copywriting**：前后台统一中文体验，并保留英文文档说明。
+### ✨ 核心特性
 
----
+- 🎯 **分级目录**：支持一、二级分类，自动聚合展示，提升资源可达性。
+- 🔍 **智能搜索**：结合站内检索与外部搜索引擎切换，一键跳转。
+- 🎨 **主题定制**：多套主题模板与配色变量，轻松匹配品牌视觉。
+- 🛠️ **后台管理**：分类、链接、主题、搜索引擎、系统设置全覆盖。
+- 🧭 **体验统一**：前后台保持中文文案风格，界面细节精致统一。
 
-## 🚀 快速上手 | Getting Started
+### 🚀 快速上手
 
-### 1. 环境准备 | Prerequisites
+1. **环境准备**：Node.js ≥ 18、npm（或 pnpm / yarn）、MongoDB 实例。
+2. **克隆安装**：
+   ```bash
+   git clone https://github.com/SinoMiles/nav_go.git
+   cd nav_go
+   npm install
+   ```
+3. **配置环境**：创建并编辑 `.env.local`，填入 MongoDB、JWT、NextAuth 等配置。
+4. **初始化数据**：
+   ```bash
+   npm run init-db        # 默认主题、分类、链接、系统设置
+   # 可选：npm run seed-data  # 导入更多示例数据
+   ```
+5. **启动调试**：
+   ```bash
+   npm run dev
+   # 前台：http://localhost:3000
+   # 后台：http://localhost:3000/admin
+   ```
 
-- Node.js ≥ 18
-- npm / pnpm / yarn （默认使用 npm）
-- MongoDB 实例（本地或云端）
+管理员账号、初始密码可在 `scripts/init-db.ts` 中自定义后重新执行脚本。
 
-### 2. 克隆与安装 | Clone & Install
-
-```bash
-git clone https://github.com/SinoMiles/nav_go.git
-cd nav_go
-npm install
-```
-
-### 3. 配置环境 | Configure Environment
-
-```bash
-cp .env.example .env.local   # 如果没有，可手动创建
-# 编辑 .env.local 填写 MongoDB、JWT 等信息
-```
-
-### 4. 初始化数据 | Seed Initial Data
-
-```bash
-npm run init-db    # 创建默认主题、分类、链接、系统设置
-# 可选：npm run seed-data  # 注入更多示例数据
-```
-
-### 5. 启动项目 | Run the App
-
-```bash
-npm run dev
-# Frontend: http://localhost:3000
-# Admin Console: http://localhost:3000/admin
-```
-
-默认管理员账号、初始密码等可在 `scripts/init-db.ts` 中调整后重新执行初始化脚本。
-
----
-
-## 🗂️ 目录结构 | Project Structure
+### 🗂️ 目录结构
 
 ```text
 nav_go/
-├─ app/                    # Next.js App Router 页面与 API Route
-├─ models/                 # Mongoose 数据模型定义
-├─ themes/                 # 可插拔主题（Sidebar / Fullscreen 等）
-├─ scripts/                # 初始化、迁移、测试脚本
-├─ img/                    # 资源预览图（README 引用）
-├─ lib/                    # 业务工具与数据库封装
-└─ …                       # 其余配置文件
+├─ app/          # Next.js App Router 页面与 API Route
+├─ models/       # Mongoose 数据模型
+├─ themes/       # 可插拔主题（Sidebar / Fullscreen 等）
+├─ scripts/      # 初始化 / 迁移 / 测试脚本
+├─ img/          # 项目预览图资源
+├─ lib/          # 通用工具 & 数据封装
+└─ …             # 其他配置
 ```
 
----
+### ⚙️ 环境变量
 
-## ⚙️ 环境变量 | Environment Variables
-
-在 `.env.local` 中配置以下关键变量：
-
-| 变量 Variable | 描述 Description |
-| ------------- | ---------------- |
+| 变量 | 说明 |
+| ---- | ---- |
 | `MONGODB_URI` | MongoDB 连接字符串，支持 `authSource` 等参数 |
 | `NEXTAUTH_SECRET` | NextAuth 会话密钥（如启用认证模块） |
-| `NEXTAUTH_URL` | NextAuth 对外访问地址 |
+| `NEXTAUTH_URL` | NextAuth 对外可访问地址 |
 | `JWT_SECRET` | 自定义 JWT 加密密钥 |
 
-建议同时配置 `SITE_URL`、`EMAIL_FROM` 等与部署相关的变量，以满足通知或第三方登录场景需要。
+可视业务需要追加 `SITE_URL`、`EMAIL_FROM` 等部署相关变量。
 
----
+### 📦 常用命令
 
-## 📦 常用命令 | Useful Scripts
+| 命令 | 功能 |
+| ---- | ---- |
+| `npm run dev` | 启动本地开发服务器（热更新） |
+| `npm run build` | 生产环境构建 |
+| `npm run start` | 生产模式启动服务 |
+| `npm run init-db` | 初始化 MongoDB 基础数据 |
+| `npm run seed-data` | 导入示例数据（可选） |
+| `npm run lint` | 运行 ESLint 检查 |
 
-| 命令 Command        | 作用 Purpose |
-| ------------------- | ------------ |
-| `npm run dev`       | 启动本地开发服务器（含热更新） |
-| `npm run build`     | 生产构建，输出 `.next` 目录 |
-| `npm run start`     | 以生产模式启动服务 |
-| `npm run init-db`   | 初始化 MongoDB 基础数据 |
-| `npm run seed-data` | 注入丰富示例数据（可选） |
-| `npm run lint`      | 运行 ESLint 规范检查 |
-
----
-
-## 🧑‍💻 贡献指南 | Contributing
-
-欢迎提交 Issue / Pull Request：
+### 🧑‍💻 贡献方式
 
 1. Fork 仓库并创建分支（`feature/your-feature`）。
 2. 保持代码遵循 ESLint / Prettier 规范。
-3. 配置 `.env.local` 并通过 `npm run build`、`npm run lint` 验证。
-4. 提交 PR 时附上改动说明与必要的截图或测试结论。
+3. 本地通过 `npm run build`、`npm run lint`。
+4. 提交 PR 时附上改动说明与必要截图或验证结果。
 
----
+### 📄 许可证
 
-## 📄 许可证 | License
+本项目基于 [MIT License](LICENSE) 开源，可用于个人或商业项目，使用时请保留版权信息。
 
-- **中文**：本项目基于 [MIT License](LICENSE) 开源，可免费用于个人及商业项目，但需保留版权信息。
-- **English**: Released under [MIT License](LICENSE). Feel free to fork, modify, and deploy as long as the license notice remains.
+</details>
 
----
+<details>
+<summary id="navgo-english-version">🇺🇸 NavGo English Version</summary>
+
+### 📌 Overview
+
+NavGo is a modern navigation platform crafted for teams and curators. It bundles elegant front-end themes, a comprehensive admin console, and configurable search routing so you can launch a polished link hub in minutes.
+
+### ✨ Highlights
+
+- 🎯 **Hierarchical Categories**: Support for root and child groups with automatic aggregation.
+- 🔍 **Smart Search**: Seamless switch between in-site results and external search engines.
+- 🎨 **Theme Customisation**: Multiple ready-to-use themes with adjustable colour palettes.
+- 🛠️ **Admin Console**: Manage categories, links, themes, search engines, and system settings in one place.
+- 🧭 **Consistent UX**: Chinese-first copy with a refined, translation-ready interface.
+
+### 🚀 Getting Started
+
+1. **Prerequisites**: Node.js ≥ 18, npm (or pnpm / yarn), and a MongoDB instance.
+2. **Clone & Install**:
+   ```bash
+   git clone https://github.com/SinoMiles/nav_go.git
+   cd nav_go
+   npm install
+   ```
+3. **Environment**: Create `.env.local`, then provide MongoDB URI, JWT secret, NextAuth settings, etc.
+4. **Seed Data**:
+   ```bash
+   npm run init-db      # Seeds default themes, categories, links, settings
+   # Optional: npm run seed-data  # Populate additional demo entries
+   ```
+5. **Run the App**:
+   ```bash
+   npm run dev
+   # Frontend: http://localhost:3000
+   # Admin Console: http://localhost:3000/admin
+   ```
+
+Default admin credentials can be adjusted in `scripts/init-db.ts` before running the seeding script.
+
+### 🗂️ Project Structure
+
+```text
+nav_go/
+├─ app/          # Next.js App Router pages & API routes
+├─ models/       # Mongoose models
+├─ themes/       # Plug-and-play themes (sidebar / fullscreen)
+├─ scripts/      # Init & migration helpers
+├─ img/          # Preview assets
+├─ lib/          # Shared utilities & DB helpers
+└─ …             # Misc configuration
+```
+
+### ⚙️ Environment Variables
+
+| Variable | Description |
+| -------- | ----------- |
+| `MONGODB_URI` | MongoDB connection string (`authSource` supported) |
+| `NEXTAUTH_SECRET` | Session secret for NextAuth (if enabled) |
+| `NEXTAUTH_URL` | Public URL exposed to NextAuth |
+| `JWT_SECRET` | Custom JWT signing key |
+
+Additional variables like `SITE_URL` or `EMAIL_FROM` are recommended in production deployments.
+
+### 📦 Useful Scripts
+
+| Command | Purpose |
+| ------- | ------- |
+| `npm run dev` | Launch local dev server with HMR |
+| `npm run build` | Production build output |
+| `npm run start` | Run the Next.js server in production mode |
+| `npm run init-db` | Seed MongoDB with core data |
+| `npm run seed-data` | Import extended demo data |
+| `npm run lint` | Execute ESLint checks |
+
+### 🧑‍💻 Contributing
+
+1. Fork the repository and create a feature branch (`feature/your-feature`).
+2. Follow ESLint / Prettier conventions.
+3. Ensure `npm run build` and `npm run lint` pass locally.
+4. Submit a PR with concise notes, screenshots, or test evidence.
+
+### 📄 License
+
+Released under the [MIT License](LICENSE). You’re free to fork, modify, and deploy—just keep the license notice intact.
+
+</details>
 
 <div align="center">
 
