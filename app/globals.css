@@ -17,3 +17,36 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.7) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.55), rgba(100, 116, 139, 0.85));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.8), rgba(100, 116, 139, 1));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+@supports (scrollbar-gutter: stable both-edges) {
+  :root {
+    scrollbar-gutter: stable both-edges;
+  }
+}

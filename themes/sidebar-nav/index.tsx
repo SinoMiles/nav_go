@@ -8,6 +8,8 @@ import type { ThemeProps } from "@/lib/types/theme";
 
 import { ScrollTopButton } from "./components/ScrollTopButton";
 import { Sidebar } from "./components/Sidebar";
+import { MobileHeader } from "./components/MobileHeader";
+import { MobileCategoryDrawer } from "./components/MobileCategoryDrawer";
 import { SearchPanel } from "./components/SearchPanel";
 import { ActiveRootSection } from "./components/ActiveRootSection";
 import { SectionList } from "./components/SectionList";
@@ -37,6 +39,7 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
   const [searchResults, setSearchResults] = useState<NormalizedLink[]>([]);
   const [showSubmit, setShowSubmit] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const accent = config?.primaryColor || "#eb247a";
   const surface = config?.contentColor || "#ffffff";
@@ -209,133 +212,174 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
     setSearchResults([]);
   }, []);
 
+  const openMobileMenu = useCallback(() => {
+    setMobileMenuOpen(true);
+  }, []);
+
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
+  const openSubmitModal = useCallback(() => {
+    setShowSubmit(true);
+  }, []);
+
+  const closeSubmitModal = useCallback(() => {
+    setShowSubmit(false);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[color:var(--theme-background)] text-slate-800" style={themeVars}>
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:px-10">
-        <Sidebar
-          siteName={siteName}
-          accent={accent}
-          roots={roots}
-          activeRoot={activeRoot}
-          onRootSelect={handleRootSelect}
-          onOpenSubmit={() => setShowSubmit(true)}
-          floating={floating}
-        />
-
-        <main className="space-y-8">
-          <SearchPanel
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
+        <div className="flex flex-col gap-6 lg:gap-10">
+          <MobileHeader
+            siteName={siteName}
             accent={accent}
-            searchInput={searchInput}
-            onSearchInputChange={setSearchInput}
-            onSearchClear={handleSearchClear}
-            onSubmit={handleSearchSubmit}
-            searchKeyword={searchKeyword}
-            resultCount={searchResults.length}
-            groups={effectiveGroups}
-            selectedGroupId={selectedGroupId}
-            onGroupSelect={handleGroupSelect}
-            selectedGroup={selectedGroup}
-            selectedEngineKey={selectedEngineKey}
-            onEngineSelect={handleEngineSelect}
+            onOpenMenu={openMobileMenu}
+            onOpenSubmit={openSubmitModal}
           />
 
-          {searchKeyword ? (
-            <section className="space-y-4 rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-900">站内搜索结果</h3>
-                <button
-                  type="button"
-                  onClick={handleSearchClear}
-                  className="text-xs text-[color:var(--theme-accent)] hover:underline"
-                  style={{ ["--theme-accent" as any]: accent }}
-                >
-                  返回全部
-                </button>
-              </div>
-              {searchResults.length === 0 ? (
-                <div className="py-16 text-center text-sm text-slate-400">没有匹配的内容，换个关键词试试吧～</div>
-              ) : (
-                <SectionList
-                  sections={[
-                    {
-                      root: {
-                        id: "search",
-                        title: `关键词：${searchKeyword}`,
-                        description: "站内匹配到的链接",
-                        order: 0,
-                        parentId: null,
-                      },
-                      childCategories: [],
-                      bucket: buildSearchBucket(searchResults),
-                    },
-                  ]}
-                  accent={accent}
-                />
-              )}
-            </section>
-          ) : activeRootSection ? (
-            <ActiveRootSection
-              root={activeRootSection.root}
-              childCategories={activeRootSection.childCategories}
-              links={activeRootSection.links}
-              activeChildId={activeChild}
-              onChildSelect={handleChildSelect}
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:gap-10">
+            <Sidebar
+              siteName={siteName}
               accent={accent}
+              roots={roots}
+              activeRoot={activeRoot}
+              onRootSelect={handleRootSelect}
+              onOpenSubmit={openSubmitModal}
+              floating={floating}
             />
-          ) : (
-            <SectionList sections={aggregatedSections} accent={accent} />
-          )}
-        </main>
 
-        <footer
-          ref={footerRef}
-          className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl lg:col-span-2"
-        >
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-slate-900">{siteName || "NavGo"} · 精选资源</h3>
-              <p className="text-sm text-slate-500">我们持续优化分类与站点，确保浏览体验始终清晰、舒适。</p>
-              <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                <span className="rounded-full bg-slate-100 px-3 py-1">人工甄选</span>
-                <span className="rounded-full bg-slate-100 px-3 py-1">结构清晰</span>
-                <span className="rounded-full bg-slate-100 px-3 py-1">定期巡检</span>
-              </div>
-            </div>
+            <main className="space-y-6 sm:space-y-8 lg:space-y-10">
+              <SearchPanel
+                accent={accent}
+                searchInput={searchInput}
+                onSearchInputChange={setSearchInput}
+                onSearchClear={handleSearchClear}
+                onSubmit={handleSearchSubmit}
+                searchKeyword={searchKeyword}
+                resultCount={searchResults.length}
+                groups={effectiveGroups}
+                selectedGroupId={selectedGroupId}
+                onGroupSelect={handleGroupSelect}
+                selectedGroup={selectedGroup}
+                selectedEngineKey={selectedEngineKey}
+                onEngineSelect={handleEngineSelect}
+              />
 
-            <div className="w-full max-w-md space-y-3">
-              <h4 className="text-sm font-semibold text-slate-800">友情链接</h4>
-              {Array.isArray(config?.friendLinks) && config.friendLinks.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {config.friendLinks.map(item => (
-                    <a
-                      key={`${item.title}-${item.url}`}
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500 transition hover:border-[color:var(--theme-accent)]/60 hover:text-[color:var(--theme-accent)]"
+              {searchKeyword ? (
+                <section className="space-y-4 rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-5 py-6 shadow-xl sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900">站内搜索结果</h3>
+                    <button
+                      type="button"
+                      onClick={handleSearchClear}
+                      className="text-xs text-[color:var(--theme-accent)] hover:underline"
                       style={{ ["--theme-accent" as any]: accent }}
                     >
-                      {item.title}
-                    </a>
-                  ))}
-                </div>
+                      返回全部
+                    </button>
+                  </div>
+                  {searchResults.length === 0 ? (
+                    <div className="py-14 text-center text-sm text-slate-400">没有匹配的内容，换个关键词试试吧～</div>
+                  ) : (
+                    <SectionList
+                      sections={[
+                        {
+                          root: {
+                            id: "search",
+                            title: `关键词：${searchKeyword}`,
+                            description: "站内匹配到的链接",
+                            order: 0,
+                            parentId: null,
+                          },
+                          childCategories: [],
+                          bucket: buildSearchBucket(searchResults),
+                        },
+                      ]}
+                      accent={accent}
+                    />
+                  )}
+                </section>
+              ) : activeRootSection ? (
+                <ActiveRootSection
+                  root={activeRootSection.root}
+                  childCategories={activeRootSection.childCategories}
+                  links={activeRootSection.links}
+                  activeChildId={activeChild}
+                  onChildSelect={handleChildSelect}
+                  accent={accent}
+                />
               ) : (
-                <p className="text-xs text-slate-400">欢迎合作互换链接，共建高质量导航生态。</p>
+                <SectionList sections={aggregatedSections} accent={accent} />
               )}
+            </main>
+          </div>
+
+          <footer
+            ref={footerRef}
+            className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-5 py-6 shadow-xl sm:px-6"
+          >
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-900">{siteName || "NavGo"} · 精选资源</h3>
+                <p className="text-sm text-slate-500">我们持续优化分类与站点，确保浏览体验始终清晰、舒适。</p>
+                <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                  <span className="rounded-full bg-slate-100 px-3 py-1">人工甄选</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1">结构清晰</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1">定期巡检</span>
+                </div>
+              </div>
+
+              <div className="w-full max-w-md space-y-3">
+                <h4 className="text-sm font-semibold text-slate-800">友情链接</h4>
+                {Array.isArray(config?.friendLinks) && config.friendLinks.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {config.friendLinks.map(item => (
+                      <a
+                        key={`${item.title}-${item.url}`}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500 transition hover:border-[color:var(--theme-accent)]/60 hover:text-[color:var(--theme-accent)]"
+                        style={{ ["--theme-accent" as any]: accent }}
+                      >
+                        {item.title}
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400">欢迎合作互换链接，共建高质量导航生态。</p>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="mt-6 flex flex-col gap-2 border-t border-slate-200 pt-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-            <span>© {new Date().getFullYear()} {siteName || "NavGo"} 保留所有权利</span>
-            <span>界面由 NavGo 设计与驱动</span>
-          </div>
-        </footer>
+            <div className="mt-6 flex flex-col gap-2 border-t border-slate-200 pt-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+              <span>© {new Date().getFullYear()} {siteName || "NavGo"} 保留所有权利</span>
+              <span>界面由 NavGo 设计与驱动</span>
+            </div>
+          </footer>
+        </div>
       </div>
 
       <AddLinkModal
         open={showSubmit}
-        onClose={() => setShowSubmit(false)}
+        onClose={closeSubmitModal}
         categories={allCategories.map(item => ({ id: item.id, title: item.title }))}
         accentColor={accent}
+      />
+
+      <MobileCategoryDrawer
+        open={mobileMenuOpen}
+        onClose={closeMobileMenu}
+        siteName={siteName}
+        accent={accent}
+        roots={roots}
+        childMap={childMap}
+        activeRoot={activeRoot}
+        activeChild={activeChild}
+        onRootSelect={handleRootSelect}
+        onChildSelect={handleChildSelect}
+        onOpenSubmit={openSubmitModal}
       />
 
       <ScrollTopButton visible={showScrollTop} accent={accent} />

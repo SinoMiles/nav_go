@@ -22,7 +22,7 @@ export const Sidebar = ({
   const wrapperClass = floating ? "lg:sticky lg:top-10" : "lg:relative";
 
   return (
-    <aside className={`flex flex-col gap-6 lg:self-start ${wrapperClass}`}>
+    <aside className={`hidden flex-col gap-6 lg:flex lg:self-start ${wrapperClass}`}>
       <div className="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-slate-50 px-6 py-6 shadow-xl">
         <div className="space-y-2">
           <span className="inline-flex items-center gap-2 text-xs font-medium tracking-[0.2em] text-slate-400">
