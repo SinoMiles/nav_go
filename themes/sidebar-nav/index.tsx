@@ -1,1291 +1,762 @@
-﻿'use client';
+﻿"use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ThemeProps } from '@/lib/types/theme';
-import AddLinkModal from '@/themes/shared/AddLinkModal';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties, FormEvent } from "react";
+import AddLinkModal from "@/themes/shared/AddLinkModal";
+import type { ThemeProps } from "@/lib/types/theme";
 
-interface UserData {
+type CategoryNode = {
   id: string;
-  name: string;
-  email: string;
-  role?: string;
-}
+  title: string;
+  description: string;
+  order: number;
+  parentId: string | null;
+  children: CategoryNode[];
+};
 
-interface LinkItem {
-  _id?: { toString(): string } | string;
+type LinkRecord = {
+  id: string;
   title: string;
   url: string;
-  description?: string;
-  iconUrl?: string;
-  tags?: string[];
-  categoryId?: { toString(): string } | string;
-}
+  description: string;
+  host: string;
+  categoryId: string | null;
+  tags: string[];
+};
 
-type GroupNode = {
+type SearchEngine = {
+  key: string;
+  name: string;
+  urlTemplate: string;
+  order: number;
+  isDefault: boolean;
+};
+
+type SearchGroup = {
   id: string;
-  title: string;
-  description?: string;
-  level: number;
-  links: LinkItem[];
-  children: GroupNode[];
+  name: string;
+  order: number;
+  engines: SearchEngine[];
 };
 
-const parseId = (value: LinkItem['_id']) =>
-  typeof value === 'string' ? value : value?.toString() ?? '';
+const INTERNAL_GROUP_ID = "internal";
+const INTERNAL_ENGINE_KEY = "internal-site";
+const ROOT_BUCKET = "__root__";
 
-const parseCategoryId = (value: LinkItem['categoryId']) =>
-  typeof value === 'string' ? value : value?.toString() ?? '';
-
-const formatHost = (url: string) => {
-  try {
-    const { hostname } = new URL(url);
-    return hostname.replace(/^www\./, '');
-  } catch {
-    return url;
+const valueToString = (value: unknown): string => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "object" && typeof (value as { toString?: () => string }).toString === "function") {
+    return (value as { toString(): string }).toString();
   }
+  return "";
 };
 
-const getParentId = (category: any) => {
-  const parent = category?.parentId;
+const resolveParentId = (category: any): string | null => {
+  const parent = category?.parentId ?? null;
   if (!parent) return null;
-  if (typeof parent === 'string') return parent;
-  if (typeof parent === 'object') {
-    if (parent._id) return parent._id.toString();
-    if (typeof parent.toString === 'function') return parent.toString();
+  if (typeof parent === "string") return parent;
+  if (typeof parent === "object") {
+    if (parent._id) return valueToString(parent._id);
+    if (typeof parent.toString === "function") return valueToString(parent.toString());
   }
   return null;
 };
 
-const buildCategoryOptions = (items: any[]) =>
-  items.map(category => ({
-    id: parseId(category._id),
-    title: category.title,
+const createCategoryData = (raw: any[]) => {
+  const nodes: CategoryNode[] = (raw || []).map(item => ({
+    id: valueToString(item?._id),
+    title: valueToString(item?.title) || "未命名分类",
+    description: valueToString(item?.description),
+    order: typeof item?.order === "number" ? item.order : 0,
+    parentId: resolveParentId(item),
+    children: [],
   }));
 
-export default function SidebarNavTheme({
-  categories,
-  links,
-  config,
-  siteName,
-}: ThemeProps) {
-  const [activeCategory, setActiveCategory] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [user, setUser] = useState<UserData | null>(null);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [darkMode, setDarkMode] = useState(() => Boolean(config?.defaultDarkMode));
-  const [hotLinks, setHotLinks] = useState<any[]>([]);
-  const [showSubmit, setShowSubmit] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const accent = config?.primaryColor || '#2563eb';
-  const contentColor = config?.contentColor || (darkMode ? '#111827' : '#ffffff');
-  const backgroundColor = config?.backgroundColor || (darkMode ? '#020617' : '#f8fafc');
-  const borderMuted = darkMode ? 'rgba(148, 163, 184, 0.28)' : '#d7dde5';
-  const textSecondary = darkMode ? '#94a3b8' : '#64748b';
-  const friendLinks = config?.friendLinks ?? [];
-  const currentYear = useMemo(() => new Date().getFullYear(), []);
-  const themeVariables = useMemo(
-    () => ({
-      '--surface-color': contentColor,
-      '--background-color': backgroundColor,
-      '--border-muted': borderMuted,
-      '--text-secondary': textSecondary,
-      '--accent-color': accent,
-    }),
-    [contentColor, backgroundColor, borderMuted, textSecondary, accent]
-  );
-  const [groupedSelections, setGroupedSelections] = useState<Record<string, string | null>>({});
+  const nodeMap = new Map<string, CategoryNode>();
+  nodes.forEach(node => {
+    if (node.id) nodeMap.set(node.id, node);
+  });
 
-  const categoryOptions = useMemo(
-    () => buildCategoryOptions(categories),
-    [categories]
+  const roots: CategoryNode[] = [];
+  nodes.forEach(node => {
+    if (node.parentId && nodeMap.has(node.parentId)) {
+      nodeMap.get(node.parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  const sortNodes = (items: CategoryNode[]) => {
+    items.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title, "zh-CN"));
+  };
+
+  sortNodes(roots);
+  roots.forEach(root => sortNodes(root.children));
+
+  const childMap = new Map<string, CategoryNode[]>();
+  roots.forEach(root => {
+    childMap.set(root.id, root.children);
+  });
+
+  const rootByChild = new Map<string, string>();
+  roots.forEach(root => {
+    root.children.forEach(child => rootByChild.set(child.id, root.id));
+  });
+
+  return { roots, childMap, rootByChild, nodeMap, allNodes: nodes };
+};
+
+const normalizeLinks = (raw: any[]): LinkRecord[] => {
+  return (raw || []).map(link => {
+    const url = valueToString(link?.url) || "#";
+    let host = url;
+    try {
+      const parsed = new URL(url);
+      host = parsed.hostname.replace(/^www\./, "");
+    } catch {
+      host = url;
+    }
+
+    return {
+      id: valueToString(link?._id) || url,
+      title: valueToString(link?.title) || "未命名链接",
+      url,
+      description: valueToString(link?.description),
+      host,
+      categoryId: link?.categoryId ? valueToString(link.categoryId) : null,
+      tags: Array.isArray(link?.tags) ? link.tags.map(valueToString).filter(Boolean) : [],
+    };
+  });
+};
+
+const buildLinkBuckets = (roots: CategoryNode[], rootByChild: Map<string, string>, links: LinkRecord[]) => {
+  const rootIds = new Set(roots.map(root => root.id));
+  const buckets = new Map<string, Map<string, LinkRecord[]>>();
+  roots.forEach(root => buckets.set(root.id, new Map()));
+
+  const uncategorized: LinkRecord[] = [];
+
+  links.forEach(link => {
+    const categoryId = link.categoryId;
+    let rootId: string | null = null;
+    let key = ROOT_BUCKET;
+
+    if (categoryId && rootByChild.has(categoryId)) {
+      rootId = rootByChild.get(categoryId)!;
+      key = `child:${categoryId}`;
+    } else if (categoryId && rootIds.has(categoryId)) {
+      rootId = categoryId;
+    }
+
+    if (rootId && buckets.has(rootId)) {
+      const map = buckets.get(rootId)!;
+      const list = map.get(key) ?? [];
+      list.push(link);
+      map.set(key, list);
+    } else {
+      uncategorized.push(link);
+    }
+  });
+
+  return { buckets, uncategorized };
+};
+
+const normalizeSearchGroups = (raw: any[]): SearchGroup[] => {
+  return (raw || [])
+    .map(group => {
+      const engines = Array.isArray(group?.engines)
+        ? group.engines
+            .map((engine: any, index: number): SearchEngine | null => {
+              const name = valueToString(engine?.name);
+              const urlTemplate = valueToString(engine?.urlTemplate);
+              if (!name || !urlTemplate) return null;
+              return {
+                key: `${name}::${urlTemplate}`,
+                name,
+                urlTemplate,
+                order: Number.isFinite(engine?.order) ? Number(engine.order) : index,
+                isDefault: Boolean(engine?.isDefault),
+              };
+            })
+            .filter(Boolean) as SearchEngine[]
+        : [];
+
+      engines.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "zh-CN"));
+
+      return {
+        id: valueToString(group?._id) || valueToString(group?.name),
+        name: valueToString(group?.name) || "未命名分组",
+        order: Number.isFinite(group?.order) ? Number(group.order) : 0,
+        engines,
+      };
+    })
+    .filter(group => group.engines.length > 0)
+    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "zh-CN"));
+};
+
+const matchQuery = (link: LinkRecord, keyword: string) => {
+  const lower = keyword.trim().toLowerCase();
+  if (!lower) return true;
+  return (
+    link.title.toLowerCase().includes(lower) ||
+    link.description.toLowerCase().includes(lower) ||
+    link.host.toLowerCase().includes(lower) ||
+    link.tags.some(tag => tag.toLowerCase().includes(lower))
   );
+};
+
+const buildSearchUrl = (template: string, keyword: string) => {
+  const encoded = encodeURIComponent(keyword);
+  return template.includes("{query}") ? template.replaceAll("{query}", encoded) : `${template}${encoded}`;
+};
+
+export default function SidebarNavTheme({ categories, links, config, siteName }: ThemeProps) {
+  const { roots, childMap, rootByChild, nodeMap, allNodes } = useMemo(
+    () => createCategoryData(categories || []),
+    [categories],
+  );
+  const normalizedLinks = useMemo(() => normalizeLinks(links || []), [links]);
+  const { buckets, uncategorized } = useMemo(
+    () => buildLinkBuckets(roots, rootByChild, normalizedLinks),
+    [roots, rootByChild, normalizedLinks],
+  );
+
+  const [activeRoot, setActiveRoot] = useState<string | null>(null);
+  const [activeChild, setActiveChild] = useState<string | null>(null);
   const [expandedRoots, setExpandedRoots] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const stored = localStorage.getItem('user');
+  const [searchGroups, setSearchGroups] = useState<SearchGroup[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState(INTERNAL_GROUP_ID);
+  const [selectedEngines, setSelectedEngines] = useState<Record<string, string>>({
+    [INTERNAL_GROUP_ID]: INTERNAL_ENGINE_KEY,
+  });
+  const [searchInput, setSearchInput] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchResults, setSearchResults] = useState<LinkRecord[]>([]);
 
-    if (token && stored) {
+  const [showSubmit, setShowSubmit] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const accent = config?.primaryColor || "#eb247a";
+  const surface = config?.contentColor || "#ffffff";
+  const background = config?.backgroundColor || "#f8fafc";
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadGroups = async () => {
       try {
-        const parsed: UserData = JSON.parse(stored);
-        if (parsed.role && parsed.role !== 'user') {
-          return;
-        }
-        setUser(parsed);
-        void loadFavorites(token);
+        const res = await fetch("/api/search-engines", { signal: controller.signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        setSearchGroups(normalizeSearchGroups(data?.groups ?? []));
       } catch (error) {
-        console.error('记录访问失败:', error);
-      }
-    }
-
-    void loadHotLinks();
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 320);
-    };
-
-    handleScroll();
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-  const loadFavorites = async (token: string) => {
-    try {
-      const res = await fetch('/api/favorites', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const favSet = new Set<string>(
-        (data.favorites || []).map((fav: any) =>
-          parseId(fav.linkId?._id ?? fav.linkId)
-        )
-      );
-      setFavorites(favSet);
-    } catch (error) {
-      console.error('记录访问失败:', error);
-    }
-  };
-
-  const loadHotLinks = async () => {
-    try {
-      const res = await fetch('/api/stats?days=7&limit=5');
-      if (!res.ok) return;
-      const data = await res.json();
-      setHotLinks(data.hotLinks || []);
-    } catch (error) {
-      console.error('记录访问失败:', error);
-    }
-  };
-
-  const handleSearch = useCallback(async (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setSearchResults(data.links || []);
-    } catch (error) {
-      console.error('记录访问失败:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
-
-  const toggleFavorite = async (linkId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      window.location.href = '/login';
-      return;
-    }
-
-    try {
-      if (favorites.has(linkId)) {
-        const res = await fetch(`/api/favorites?linkId=${linkId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          setFavorites(prev => {
-            const next = new Set(prev);
-            next.delete(linkId);
-            return next;
-          });
-        }
-      } else {
-        const res = await fetch('/api/favorites', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ linkId }),
-        });
-        if (res.ok) {
-          setFavorites(prev => new Set(prev).add(linkId));
+        if ((error as Error).name !== "AbortError") {
+          console.error("加载搜索引擎失败:", error);
         }
       }
-    } catch (error) {
-      console.error('记录访问失败:', error);
-    }
-  };
+    };
+    void loadGroups();
+    return () => controller.abort();
+  }, []);
 
-  const handleRate = async (linkId: string, score: number) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      window.location.href = '/login';
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/ratings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+  const effectiveGroups = useMemo<SearchGroup[]>(() => {
+    const builtIn: SearchGroup = {
+      id: INTERNAL_GROUP_ID,
+      name: "站内搜索",
+      order: -Infinity,
+      engines: [
+        {
+          key: INTERNAL_ENGINE_KEY,
+          name: "站内搜索",
+          urlTemplate: "",
+          order: 0,
+          isDefault: true,
         },
-        body: JSON.stringify({ linkId, rating: score }),
-      });
-      if (res.ok) {
-        setRatings(prev => ({ ...prev, [linkId]: score }));
-      }
-    } catch (error) {
-      console.error('记录访问失败:', error);
-    }
-  };
-
-  const recordVisit = async (linkId: string) => {
-    try {
-      await fetch('/api/stats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ linkId }),
-      });
-    } catch (error) {
-      console.error('记录访问失败:', error);
-    }
-  };
-
-  const handleVisit = async (link: LinkItem) => {
-    const id = parseId(link._id);
-    if (id) await recordVisit(id);
-    window.open(link.url, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleDetail = (link: LinkItem) => {
-    const id = parseId(link._id);
-    if (!id) return;
-    window.location.href = `/link/${id}`;
-  };
-
-  const countsMap = useMemo(() => {
-    const map = new Map<string, number>();
-    links.forEach(link => {
-      const id = parseCategoryId(link.categoryId);
-      if (!id) return;
-      map.set(id, (map.get(id) || 0) + 1);
-    });
-    return map;
-  }, [links]);
-
-  const linksByCategory = useMemo(() => {
-    const map = new Map<string, LinkItem[]>();
-    links.forEach(link => {
-      const id = parseCategoryId(link.categoryId);
-      if (!id) return;
-      const bucket = map.get(id);
-      if (bucket) {
-        bucket.push(link);
-      } else {
-        map.set(id, [link]);
-      }
-    });
-    return map;
-  }, [links]);
-
-  const hierarchy = useMemo(() => {
-    const children: Record<string, any[]> = {};
-    const roots: any[] = [];
-
-    categories.forEach(category => {
-      const parentId = getParentId(category);
-      if (parentId) {
-        (children[parentId] = children[parentId] || []).push(category);
-      } else {
-        roots.push(category);
-      }
-    });
-
-    const sortList = (list: any[]) =>
-      list.sort((a, b) => {
-        const orderDiff = (a.order ?? 0) - (b.order ?? 0);
-        return orderDiff !== 0
-          ? orderDiff
-          : (a.title || '').localeCompare(b.title || '', 'zh-CN');
-      });
-
-    sortList(roots);
-    Object.keys(children).forEach(key => sortList(children[key]));
-
-    const childIds: Record<string, string[]> = {};
-    Object.keys(children).forEach(key => {
-      childIds[key] = children[key].map(child => parseId(child._id));
-    });
-
-    return { roots, children, childIds };
-  }, [categories]);
+      ],
+    };
+    return [builtIn, ...searchGroups];
+  }, [searchGroups]);
 
   useEffect(() => {
-    setExpandedRoots(prev => {
-      const preserved = new Set<string>();
-
-      hierarchy.roots.forEach(root => {
-        const id = parseId(root._id);
-        if (id && prev.has(id)) {
-          preserved.add(id);
-        }
+    setSelectedEngines(prev => {
+      const next = { ...prev };
+      effectiveGroups.forEach(group => {
+        if (next[group.id]) return;
+        const defaultEngine = group.engines.find(item => item.isDefault) ?? group.engines[0];
+        if (defaultEngine) next[group.id] = defaultEngine.key;
       });
-
-      if (preserved.size === prev.size) {
-        let identical = true;
-        prev.forEach(value => {
-          if (!preserved.has(value)) {
-            identical = false;
-          }
-        });
-        if (identical) {
-          return prev;
-        }
-      }
-
-      return preserved;
+      return next;
     });
-  }, [hierarchy.roots]);
+  }, [effectiveGroups]);
 
   useEffect(() => {
-    if (!activeCategory) {
-      return;
+    if (!effectiveGroups.some(group => group.id === selectedGroupId)) {
+      setSelectedGroupId(INTERNAL_GROUP_ID);
     }
+  }, [effectiveGroups, selectedGroupId]);
 
-    const matchRoot = hierarchy.roots.find(root => {
-      const rootId = parseId(root._id);
-      if (!rootId) return false;
-      if (rootId === activeCategory) return true;
-
-      const queue = [...(hierarchy.childIds[rootId] || [])];
-      while (queue.length) {
-        const current = queue.shift()!;
-        if (current === activeCategory) {
-          return true;
-        }
-        const descendants = hierarchy.childIds[current];
-        if (descendants && descendants.length > 0) {
-          queue.push(...descendants);
-        }
-      }
-
-      return false;
-    });
-
-    if (!matchRoot) {
-      return;
-    }
-
-    const rootId = parseId(matchRoot._id);
-    if (!rootId) {
-      return;
-    }
-
-    setExpandedRoots(prev => {
-      if (prev.has(rootId)) {
-        return prev;
-      }
-      const next = new Set(prev);
-      next.add(rootId);
-      return next;
-    });
-  }, [activeCategory, hierarchy.childIds, hierarchy.roots]);
-
-  const toggleRootExpansion = (rootId: string) => {
-    setExpandedRoots(prev => {
-      const next = new Set(prev);
-      if (next.has(rootId)) {
-        next.delete(rootId);
-      } else {
-        next.add(rootId);
-      }
-      return next;
-    });
-  };
-
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 320);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const displayedLinks = useMemo(() => {
-    if (searchQuery.trim()) {
-      return searchResults;
+  const selectedGroup = useMemo(
+    () => effectiveGroups.find(group => group.id === selectedGroupId) ?? effectiveGroups[0],
+    [effectiveGroups, selectedGroupId],
+  );
+  const selectedEngineKey = selectedGroup ? selectedEngines[selectedGroup.id] ?? selectedGroup.engines[0]?.key : INTERNAL_ENGINE_KEY;
+  const selectedEngine = selectedGroup?.engines.find(engine => engine.key === selectedEngineKey) ?? selectedGroup?.engines[0];
+
+  const toggleRoot = (rootId: string) => {
+    setExpandedRoots(prev => {
+      const next = new Set(prev);
+      if (next.has(rootId)) next.delete(rootId);
+      else next.add(rootId);
+      return next;
+    });
+  };
+
+  const handleRootSelect = (rootId: string | null) => {
+    setActiveRoot(prev => (prev === rootId ? null : rootId));
+    setActiveChild(null);
+    if (rootId) {
+      setExpandedRoots(prev => new Set(prev).add(rootId));
     }
-    if (!activeCategory) {
-      return links;
-    }
-    const linkCategoryId = (link: LinkItem) => parseCategoryId(link.categoryId);
-    const childIds = hierarchy.childIds[activeCategory];
-    if (childIds && childIds.length > 0) {
-      const ids = new Set([activeCategory, ...childIds]);
-      return links.filter(link => ids.has(linkCategoryId(link)));
-    }
-    return links.filter(link => linkCategoryId(link) === activeCategory);
-  }, [activeCategory, hierarchy.childIds, links, searchQuery, searchResults]);
+  };
 
-  const groupedSections = useMemo(() => {
-    if (searchQuery.trim() || activeCategory) {
-      return [] as GroupNode[];
-    }
+  const handleChildSelect = (childId: string | null) => {
+    setActiveChild(childId);
+  };
 
-    const buildNode = (category: any, level = 0): GroupNode | null => {
-      const id = parseId(category._id);
-      if (!id) return null;
+  const handleGroupSelect = (groupId: string) => {
+    setSelectedGroupId(groupId);
+    setSearchKeyword("");
+    setSearchResults([]);
+  };
 
-      const childrenNodes = (hierarchy.children[id] || [])
-        .map(child => buildNode(child, level + 1))
-        .filter((child): child is GroupNode => Boolean(child));
+  const handleEngineSelect = (groupId: string, engineKey: string) => {
+    setSelectedEngines(prev => ({ ...prev, [groupId]: engineKey }));
+  };
 
-      const linksForCategory = linksByCategory.get(id) ?? [];
+  const clearSearch = () => {
+    setSearchInput("");
+    setSearchKeyword("");
+    setSearchResults([]);
+  };
 
-      if (linksForCategory.length === 0 && childrenNodes.length === 0) {
-        return null;
+  const handleSearchSubmit = useCallback(
+    (event?: FormEvent<HTMLFormElement>) => {
+      event?.preventDefault();
+      const keyword = searchInput.trim();
+      if (!keyword || !selectedGroup || !selectedEngine) {
+        clearSearch();
+        return;
       }
 
-      return {
-        id,
-        title: category.title,
-        description: category.description,
-        level,
-        links: linksForCategory,
-        children: childrenNodes,
-      };
-    };
-
-    return hierarchy.roots
-      .map(root => buildNode(root, 0))
-      .filter((node): node is GroupNode => Boolean(node));
-  }, [activeCategory, hierarchy.children, hierarchy.roots, linksByCategory, searchQuery]);
-
-  useEffect(() => {
-    setGroupedSelections(prev => {
-      const validRoots = new Set(groupedSections.map(node => node.id));
-      let changed = false;
-      const next: Record<string, string | null> = {};
-
-      groupedSections.forEach(node => {
-        const childIds = new Set(node.children.map(child => child.id));
-        const previous = prev[node.id] ?? null;
-        if (previous && !childIds.has(previous)) {
-          changed = true;
-          next[node.id] = null;
-        } else {
-          next[node.id] = previous ?? null;
-          if (!(node.id in prev)) {
-            changed = true;
-          }
-        }
-      });
-
-      Object.keys(prev).forEach(rootId => {
-        if (!validRoots.has(rootId)) {
-          changed = true;
-        }
-      });
-
-      return changed ? next : prev;
-    });
-  }, [groupedSections]);
-
-  const showGroupedView = !searchQuery.trim() && !activeCategory;
-
-  const computeNodeLinkCount = (node: GroupNode): number =>
-    node.links.length + node.children.reduce((sum, child) => sum + computeNodeLinkCount(child), 0);
-
-  const collectNodeLinks = (node: GroupNode): LinkItem[] => {
-    const aggregated: LinkItem[] = [...node.links];
-    node.children.forEach(child => {
-      aggregated.push(...collectNodeLinks(child));
-    });
-    return aggregated;
-  };
-
-  const handleGroupedSelection = (rootId: string, childId: string | null) => {
-    setGroupedSelections(prev => {
-      if ((prev[rootId] ?? null) === childId) {
-        return prev;
+      if (selectedGroup.id === INTERNAL_GROUP_ID) {
+        const filtered = normalizedLinks.filter(link => matchQuery(link, keyword));
+        setSearchKeyword(keyword);
+        setSearchResults(filtered);
+      } else {
+        const target = buildSearchUrl(selectedEngine.urlTemplate, keyword);
+        window.open(target, "_blank", "noopener,noreferrer");
+        clearSearch();
       }
-      return { ...prev, [rootId]: childId };
+    },
+    [normalizedLinks, searchInput, selectedEngine, selectedGroup],
+  );
+
+  const themeVars: CSSProperties = useMemo(
+    () => ({
+      "--theme-accent": accent,
+      "--theme-surface": surface,
+      "--theme-background": background,
+    }),
+    [accent, surface, background],
+  );
+
+  const displaySections = useMemo(() => {
+    if (searchKeyword) return [];
+
+    if (activeRoot) {
+      const sections: Array<{ id: string; title: string; description: string; links: LinkRecord[] }> = [];
+      const rootNode = nodeMap.get(activeRoot);
+      const bucket = buckets.get(activeRoot) ?? new Map();
+
+      if (activeChild) {
+        const childNode = nodeMap.get(activeChild);
+        sections.push({
+          id: activeChild,
+          title: childNode?.title ?? "未命名分类",
+          description: childNode?.description ?? "",
+          links: bucket.get(`child:${activeChild}`) ?? [],
+        });
+      } else {
+        sections.push({
+          id: `${activeRoot}-root`,
+          title: rootNode?.title ?? "未命名分类",
+          description: rootNode?.description ?? "",
+          links: bucket.get(ROOT_BUCKET) ?? [],
+        });
+        (childMap.get(activeRoot) ?? []).forEach(child => {
+          sections.push({
+            id: child.id,
+            title: child.title,
+            description: child.description,
+            links: bucket.get(`child:${child.id}`) ?? [],
+          });
+        });
+      }
+
+      return sections.filter(section => section.links.length > 0);
+    }
+
+    const sections: Array<{ id: string; title: string; description: string; links: LinkRecord[] }> = [];
+    roots.forEach(root => {
+      const bucket = buckets.get(root.id) ?? new Map();
+      const rootLinks = bucket.get(ROOT_BUCKET) ?? [];
+      if (rootLinks.length > 0) {
+        sections.push({ id: `${root.id}-root`, title: root.title, description: root.description, links: rootLinks });
+      }
+      root.children.forEach(child => {
+        const childLinks = bucket.get(`child:${child.id}`) ?? [];
+        if (childLinks.length > 0) {
+          sections.push({ id: child.id, title: child.title, description: child.description, links: childLinks });
+        }
+      });
     });
-  };
 
-  const renderLinkCard = (link: LinkItem) => {
-    const id = parseId(link._id);
-    const isFavorite = favorites.has(id);
-    const rating = ratings[id] || 0;
-
-    return (
-      <article
-        key={id}
-        className="flex h-full flex-col justify-between rounded-2xl border px-5 py-6 transition-all hover:-translate-y-0.5 hover:shadow-lg"
-        style={{
-          borderColor: borderMuted,
-          backgroundColor: contentColor,
-        }}
-      >
-        <div className="space-y-4">
-          <div className="flex items-start gap-4">
-            {link.iconUrl ? (
-              <img src={link.iconUrl} alt={link.title} className="h-12 w-12 rounded-xl object-cover" />
-            ) : (
-              <span className="grid h-12 w-12 place-items-center rounded-xl bg-slate-200 text-base font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                {link.title?.charAt(0) ?? 'N'}
-              </span>
-            )}
-            <div className="min-w-0 flex-1 space-y-2">
-              <button
-                onClick={() => handleDetail(link)}
-                className="block truncate text-left text-lg font-semibold text-slate-900 transition hover:text-[color:var(--accent-color)] dark:text-slate-100"
-                style={{ ['--accent-color' as any]: accent }}
-              >
-                {link.title}
-              </button>
-              {link.description && (
-                <p className="line-clamp-2 text-sm" style={{ color: textSecondary }}>
-                  {link.description}
-                </p>
-              )}
-              <p
-                className="text-xs uppercase tracking-wide"
-                style={{ color: textSecondary }}
-              >
-                {formatHost(link.url)}
-              </p>
-            </div>
-            {user && (
-              <button
-                onClick={() => toggleFavorite(id)}
-                className={`text-lg transition-transform hover:scale-110 ${
-                  isFavorite
-                    ? 'text-[color:var(--accent-color)]'
-                    : 'text-slate-300 hover:text-slate-400 dark:text-slate-600'
-                }`}
-                style={{ ['--accent-color' as any]: accent }}
-                aria-label={isFavorite ? '取消收藏' : '收藏站点'}
-              >
-                {isFavorite ? '❤️' : '🤍'}
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-2 text-xs">
-            {link.tags?.slice(0, 3).map(tag => (
-              <span
-                key={tag}
-                className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1 text-amber-500">
-            {[1, 2, 3, 4, 5].map(star => (
-              <button
-                key={star}
-                onClick={() => handleRate(id, star)}
-                className={`transition-colors ${
-                  rating >= star
-                    ? 'text-amber-400'
-                    : 'text-slate-300 hover:text-amber-300 dark:text-slate-600'
-                }`}
-                aria-label={`评分 ${star} 星`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleVisit(link)}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:text-slate-300"
-            >
-              访问
-            </button>
-            <button
-              onClick={() => handleDetail(link)}
-              className="rounded-full bg-[color:var(--accent-color)] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
-              style={{ ['--accent-color' as any]: accent }}
-            >
-              详情
-            </button>
-          </div>
-        </div>
-      </article>
-    );
-  };
-
-  const renderGroupedNode = (node: GroupNode): JSX.Element => {
-    const allCount = computeNodeLinkCount(node);
-    const childSummaries = node.children.map(child => ({
-      id: child.id,
-      title: child.title,
-      count: computeNodeLinkCount(child),
-      node: child,
-    }));
-    const activeChildId = groupedSelections[node.id] ?? null;
-    const activeChildSummary = activeChildId
-      ? childSummaries.find(item => item.id === activeChildId)
-      : undefined;
-    const linksToDisplay = activeChildSummary
-      ? collectNodeLinks(activeChildSummary.node)
-      : collectNodeLinks(node);
-    const description = activeChildSummary?.node.description ?? node.description;
-
-    return (
-      <div
-        key={node.id}
-        className="space-y-6 rounded-2xl border px-6 py-6 shadow-sm"
-        style={{
-          borderColor: borderMuted,
-          backgroundColor: contentColor,
-        }}
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{node.title}</h3>
-              <span
-                className="rounded-full border px-3 py-1 text-xs font-medium"
-                style={{ borderColor: borderMuted, color: textSecondary }}
-              >
-                共 {allCount} 个站点
-              </span>
-            </div>
-            {description && (
-              <p className="text-sm" style={{ color: textSecondary }}>
-                {description}
-              </p>
-            )}
-          </div>
-
-          {childSummaries.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => handleGroupedSelection(node.id, null)}
-                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                  activeChildId === null
-                    ? 'bg-[color:var(--accent-color)] text-white shadow-sm'
-                    : ''
-                }`}
-                style={
-                  activeChildId === null
-                    ? {
-                        ['--accent-color' as any]: accent,
-                        borderColor: accent,
-                        backgroundColor: accent,
-                        color: '#ffffff',
-                      }
-                    : {
-                        borderColor: borderMuted,
-                        backgroundColor: contentColor,
-                        color: textSecondary,
-                      }
-                }
-              >
-                全部
-                <span className="text-[10px] opacity-70">{allCount}</span>
-              </button>
-              {childSummaries.map(child => {
-                const isActive = activeChildId === child.id;
-                return (
-                  <button
-                    key={child.id}
-                    type="button"
-                    onClick={() => handleGroupedSelection(node.id, child.id)}
-                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      isActive ? 'bg-[color:var(--accent-color)] text-white shadow-sm' : ''
-                    }`}
-                    style={
-                      isActive
-                        ? {
-                            ['--accent-color' as any]: accent,
-                            borderColor: accent,
-                            backgroundColor: accent,
-                            color: '#ffffff',
-                          }
-                        : {
-                            borderColor: borderMuted,
-                            backgroundColor: contentColor,
-                            color: textSecondary,
-                          }
-                    }
-                  >
-                    {child.title}
-                    <span className="text-[10px] opacity-70">{child.count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {linksToDisplay.map(renderLinkCard)}
-        </div>
-      </div>
-    );
-  };
-
-  const activeCategoryInfo = useMemo(() => {
-    if (!activeCategory) {
-      return { title: '全部站点', description: '分类精选导航' };
+    if (uncategorized.length > 0) {
+      sections.push({ id: "uncategorized", title: "未分组资源", description: "", links: uncategorized });
     }
-    const active = categories.find(cat => parseId(cat._id) === activeCategory);
-    if (active) {
-      return {
-        title: active.title,
-        description: active.description || '分类精选导航',
-      };
-    }
-    const parent = categories.find(cat => {
-      const childIds = hierarchy.childIds[parseId(cat._id)] || [];
-      return childIds.includes(activeCategory);
-    });
-    if (parent) {
-      return {
-        title: parent.title,
-        description: parent.description || '分类精选导航',
-      };
-    }
-    return { title: '全部站点', description: '分类精选导航' };
-  }, [activeCategory, categories, hierarchy.childIds]);
+
+    return sections;
+  }, [activeChild, activeRoot, buckets, childMap, nodeMap, roots, searchKeyword, uncategorized]);
 
   return (
-    <div
-      className={`relative min-h-screen ${
-        darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
-      } transition-colors`}
-      style={{ ...(themeVariables as React.CSSProperties), backgroundColor }}
-    >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{
-          background: `radial-gradient(circle at 20% 20%, ${accent}33, transparent 45%),
-            radial-gradient(circle at 80% 10%, #0ea5e966, transparent 40%),
-            radial-gradient(circle at 30% 80%, #a855f766, transparent 45%)`,
-        }}
-      />
-
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header
-          className={`border-b px-10 py-5 backdrop-blur ${
-            darkMode ? 'border-slate-800 bg-slate-900/80' : 'border-white/70 bg-white/80'
-          }`}
-          style={{ borderBottomColor: borderMuted, backgroundColor: contentColor }}
-        >
-          <div className="mx-auto flex w-full max-w-none flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div
-                className="grid h-12 w-12 place-items-center rounded-2xl bg-[color:var(--accent-color)] text-lg font-semibold text-white shadow-sm"
-                style={{ ['--accent-color' as any]: accent }}
-              >
-                {siteName?.charAt(0) ?? 'N'}
-              </div>
-              <div>
-                <h1 className="text-2xl font-semibold">{siteName || 'NavCraft'}</h1>
-                <p className="text-sm" style={{ color: textSecondary }}>
-                  精选导航 · 极速抵达想要的站点
-                </p>
-              </div>
-            </div>
-
+    <div className="min-h-screen bg-[color:var(--theme-background)] text-slate-800" style={themeVars}>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:px-10">
+        <aside className="hidden lg:sticky lg:top-10 lg:flex lg:h-max lg:flex-col lg:gap-6">
+          <div className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setDarkMode(prev => !prev)}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                  darkMode
-                    ? 'border-slate-700 text-slate-300 hover:border-slate-600'
-                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                {darkMode ? '🌞 浅色模式' : '🌙 深色模式'}
-              </button>
-              {user ? (
-                <div className="flex items-center gap-2 rounded-full border border-transparent bg-slate-200/70 px-4 py-2 text-sm font-medium text-slate-700 dark:bg-slate-800/70 dark:text-slate-200">
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-100">
-                    {user.name.charAt(0).toUpperCase()}
-                  </span>
-                  <span>{user.name}</span>
-                </div>
-              ) : (
-                <a
-                  href="/login"
-                  className="rounded-full bg-[color:var(--accent-color)] px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
-                  style={{ ['--accent-color' as any]: accent }}
-                >
-                  登录以收藏
-                </a>
-              )}
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[color:var(--theme-accent)] text-lg font-semibold text-white">
+                {siteName?.charAt(0) ?? "N"}
+              </div>
+              <div className="space-y-1">
+                <p className="text-lg font-semibold text-slate-900">{siteName || "导航站"}</p>
+                <p className="text-xs text-slate-500">精选优质站点，助你快捷抵达</p>
+              </div>
             </div>
+            <button
+              onClick={() => setShowSubmit(true)}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[color:var(--theme-accent)] px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+            >
+              提交新网站
+            </button>
           </div>
-        </header>
 
-        <div className="mx-auto flex w-full max-w-none flex-1 flex-col px-10 py-8 lg:flex-row lg:gap-10">
-          <aside
-            className="mb-8 w-full shrink-0 rounded-3xl border p-6 shadow-sm backdrop-blur lg:mb-0 lg:w-80"
-            style={{
-              borderColor: borderMuted,
-              backgroundColor: contentColor,
-            }}
-          >
-            <div className="space-y-6">
+          <div className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-4 py-5 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-800">导航分类</h3>
+              <button
+                onClick={() => handleRootSelect(null)}
+                className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500 transition hover:border-[color:var(--theme-accent)]/60 hover:text-[color:var(--theme-accent)]"
+              >
+                全部
+              </button>
+            </div>
+
+            <ul className="mt-4 space-y-3 text-sm">
+              {roots.map(root => {
+                const expanded = expandedRoots.has(root.id);
+                const active = activeRoot === root.id;
+                const children = childMap.get(root.id) ?? [];
+                return (
+                  <li key={root.id} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleRootSelect(root.id)}
+                        className={`flex-1 rounded-2xl border px-3 py-2 text-left transition ${
+                          active
+                            ? "border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)]/15 text-[color:var(--theme-accent)] shadow-sm"
+                            : "border-transparent hover:border-slate-200/80 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span className="font-medium">{root.title}</span>
+                      </button>
+                      <button
+                        onClick={() => toggleRoot(root.id)}
+                        className={`grid h-9 w-9 place-items-center rounded-2xl border border-slate-200 text-xs transition hover:border-[color:var(--theme-accent)]/60 hover:text-[color:var(--theme-accent)] ${
+                          expanded ? "rotate-180" : ""
+                        }`}
+                        aria-label="展开子分类"
+                      >
+                        ▼
+                      </button>
+                    </div>
+
+                    {expanded && children.length > 0 && (
+                      <div className="ml-3 flex flex-wrap gap-2">
+                        {children.map(child => {
+                          const childActive = activeChild === child.id;
+                          return (
+                            <button
+                              key={child.id}
+                              onClick={() => handleChildSelect(childActive ? null : child.id)}
+                              className={`rounded-full border px-3 py-1 text-xs transition ${
+                                childActive
+                                  ? "border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)]/20 text-[color:var(--theme-accent)]"
+                                  : "border-slate-200 text-slate-500 hover:border-[color:var(--theme-accent)]/50 hover:text-[color:var(--theme-accent)]"
+                              }`}
+                            >
+                              {child.title}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </aside>
+
+        <main className="space-y-8">
+          <section className="space-y-4 rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-2xl">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p
-                  className="text-xs uppercase tracking-wide"
-                  style={{ color: textSecondary }}
-                >
-                  搜索站点
-                </p>
-                <div className="relative mt-3">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={event => handleSearch(event.target.value)}
-                    placeholder="输入关键词或标签"
-                    className={`w-full rounded-2xl border px-4 py-3 text-sm shadow-sm outline-none transition focus:ring-2 ${
-                      darkMode
-                        ? 'border-slate-700 bg-slate-900/40 text-slate-100 focus:ring-slate-600'
-                        : 'border-slate-200 bg-white text-slate-900 focus:ring-slate-200'
-                    }`}
-                  />
-                  <span
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs"
-                    style={{ color: textSecondary }}
-                  >
-                    {isSearching ? '搜索中…' : '⌘K'}
-                  </span>
-                </div>
+                <h2 className="text-xl font-semibold text-slate-900">智能搜索</h2>
+                <p className="text-sm text-slate-500">选择搜索引擎或直接搜索站内资源。</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSearchSubmit} className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
+                {effectiveGroups.map(group => {
+                  const active = selectedGroup?.id === group.id;
+                  return (
+                    <button
+                      key={group.id}
+                      type="button"
+                      onClick={() => handleGroupSelect(group.id)}
+                      className={`rounded-full border px-3 py-1 transition ${
+                        active
+                          ? "border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)]/20 text-[color:var(--theme-accent)]"
+                          : "border-transparent bg-slate-100 text-slate-500 hover:border-[color:var(--theme-accent)]/40 hover:text-[color:var(--theme-accent)]"
+                      }`}
+                    >
+                      {group.name}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div>
-                <p
-                  className="text-xs uppercase tracking-wide"
-                  style={{ color: textSecondary }}
-                >
-                  分类浏览
-                </p>
-                <div className="mt-3 space-y-2">
-                  {hierarchy.roots.map(root => {
-                    const rootId = parseId(root._id);
-                    const childNodes = hierarchy.children[rootId] || [];
-                    const childIds = hierarchy.childIds[rootId] || [];
-                    const totalCount =
-                      (countsMap.get(rootId) || 0) +
-                      childIds.reduce(
-                        (sum, childId) => sum + (countsMap.get(childId) || 0),
-                        0
-                      );
-                    const rootActive =
-                      activeCategory === rootId || childIds.includes(activeCategory);
-                    const isExpanded = expandedRoots.has(rootId);
-                    const expandButtonClass = `group/expand relative flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-color)] focus-visible:ring-offset-2 ${
-                      rootActive
-                        ? 'border-white/40 bg-white/15 text-white'
-                        : isExpanded
-                        ? 'border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100'
-                        : darkMode
-                        ? 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500 hover:bg-slate-800'
-                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50'
-                    }`;
-                    const childContainerClass = 'mt-2 space-y-2 rounded-2xl border p-3 shadow-sm transition';
-
+              {selectedGroup && selectedGroup.engines.length > 1 && (
+                <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                  {selectedGroup.engines.map(engine => {
+                    const active = selectedEngine?.key === engine.key;
                     return (
-                      <div key={rootId} className="space-y-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSearchQuery('');
-                            setSearchResults([]);
-                            setActiveCategory(prev => (prev === rootId ? '' : rootId));
-                          }}
-                          className={`group w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                            rootActive
-                              ? 'border-transparent bg-[color:var(--accent-color)] text-white shadow-md'
-                              : darkMode
-                              ? 'border-slate-800/70 bg-slate-900/40 text-slate-200 hover:border-slate-700 hover:bg-slate-900/60'
-                              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                          }`}
-                          style={{ ['--accent-color' as any]: accent }}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              {childNodes.length > 0 && (
-                                <span
-                                  role="button"
-                                  tabIndex={0}
-                                  aria-label={`${isExpanded ? '收起' : '展开'}${root.title}子分类`}
-                                  title={`${isExpanded ? '收起' : '展开'}${root.title}子分类`}
-                                  onClick={event => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    toggleRootExpansion(rootId);
-                                  }}
-                                  onKeyDown={event => {
-                                    if (event.key === 'Enter' || event.key === ' ') {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      toggleRootExpansion(rootId);
-                                    }
-                                  }}
-                                  className={expandButtonClass}
-                                  style={{
-                                    ['--accent-color' as any]: accent,
-                                    ...( !rootActive && isExpanded
-                                      ? { borderColor: accent, color: accent }
-                                      : {}),
-                                  }}
-                                >
-                                  <svg
-                                    className="h-3.5 w-3.5"
-                                    viewBox="0 0 12 12"
-                                    fill="none"
-                                    aria-hidden="true"
-                                  >
-                                    <path
-                                      d="M2 6h8"
-                                      stroke="currentColor"
-                                      strokeWidth="1.4"
-                                      strokeLinecap="round"
-                                    />
-                                    {!isExpanded && (
-                                      <path
-                                        d="M6 2v8"
-                                        stroke="currentColor"
-                                        strokeWidth="1.4"
-                                        strokeLinecap="round"
-                                      />
-                                    )}
-                                  </svg>
-                                  <span className="sr-only">
-                                    {isExpanded ? '\u6536\u8d77\u5b50\u5206\u7c7b' : '\u5c55\u5f00\u5b50\u5206\u7c7b'}
-                                  </span>
-                                </span>
-                              )}
-                              <span className="font-medium">{root.title}</span>
-                            </div>
-                            <span
-                              className="rounded-full px-2 py-0.5 text-xs transition"
-                              style={
-                                rootActive
-                                  ? {
-                                      ['--accent-color' as any]: accent,
-                                      backgroundColor: accent,
-                                      color: '#ffffff',
-                                    }
-                                  : {
-                                      backgroundColor: darkMode
-                                        ? 'rgba(148, 163, 184, 0.15)'
-                                        : '#f1f5f9',
-                                      color: textSecondary,
-                                    }
-                              }
-                            >
-                              {totalCount}
-                            </span>
-                          </div>
-                        </button>
-
-                        {childNodes.length > 0 && isExpanded && (
-                          <div
-                            className={childContainerClass}
-                            style={{
-                              borderColor: borderMuted,
-                              backgroundColor: contentColor,
-                              ['--accent-color' as any]: accent,
-                            }}
-                          >
-                            {childNodes.map(child => {
-                              const childId = parseId(child._id);
-                              const childCount = countsMap.get(childId) || 0;
-                              const isActiveChild = activeCategory === childId;
-                              const childBadgeClass = 'rounded-full px-2 py-0.5 text-[10px] transition';
-                              return (
-                                <button
-                                  key={childId}
-                                  type="button"
-                                  onClick={() => {
-                                    setSearchQuery('');
-                                    setSearchResults([]);
-                                    setActiveCategory(prev => (prev === childId ? '' : childId));
-                                  }}
-                                  className="w-full rounded-xl border px-3 py-2 text-left text-xs transition hover:-translate-y-0.5"
-                                  style={
-                                    isActiveChild
-                                      ? {
-                                          ['--accent-color' as any]: accent,
-                                          borderColor: accent,
-                                          color: accent,
-                                          backgroundColor: contentColor,
-                                        }
-                                      : {
-                                          borderColor: borderMuted,
-                                          backgroundColor: contentColor,
-                                          color: textSecondary,
-                                        }
-                                  }
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <span>{child.title}</span>
-                                    <span
-                                      className={childBadgeClass}
-                                      style={
-                                        isActiveChild
-                                          ? {
-                                              ['--accent-color' as any]: accent,
-                                              backgroundColor: accent,
-                                              color: '#ffffff',
-                                            }
-                                          : {
-                                              backgroundColor: darkMode ? 'rgba(148, 163, 184, 0.15)' : '#f1f5f9',
-                                              color: textSecondary,
-                                            }
-                                      }
-                                    >
-                                      {childCount}
-                                    </span>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        key={engine.key}
+                        type="button"
+                        onClick={() => handleEngineSelect(selectedGroup.id, engine.key)}
+                        className={`rounded-full border px-3 py-1 transition ${
+                          active
+                            ? "border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)]/20 text-[color:var(--theme-accent)]"
+                            : "border-slate-200 text-slate-500 hover:border-[color:var(--theme-accent)]/40 hover:text-[color:var(--theme-accent)]"
+                        }`}
+                      >
+                        {engine.name}
+                      </button>
                     );
                   })}
                 </div>
+              )}
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative flex-1">
+                  <input
+                    type="search"
+                    value={searchInput}
+                    onChange={event => setSearchInput(event.target.value)}
+                    placeholder="输入关键词，搜索导航站"
+                    className="w-full rounded-2xl border border-slate-200/80 bg-white px-5 py-3 text-sm text-slate-700 shadow-inner focus:border-[color:var(--theme-accent)] focus:outline-none"
+                  />
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-[color:var(--theme-accent)]"
+                    >
+                      清除
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[color:var(--theme-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+                >
+                  开始搜索
+                </button>
               </div>
 
-              {hotLinks.length > 0 && (
-                <div>
-                  <p
-                    className="text-xs uppercase tracking-wide"
-                    style={{ color: textSecondary }}
-                  >
-                    热门站点
-                  </p>
-                  <div className="mt-3 space-y-3">
-                    {hotLinks.map(item => (
-                      <button
-                        key={item.linkId}
-                        onClick={() => handleVisit({
-                          _id: item.linkId,
-                          title: item.title,
-                          url: item.url,
-                          iconUrl: item.iconUrl,
-                        })}
-                        className="flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition hover:-translate-y-0.5"
-                        style={{
-                          borderColor: borderMuted,
-                          backgroundColor: contentColor,
-                        }}
-                      >
-                        {item.iconUrl ? (
-                          <img
-                            src={item.iconUrl}
-                            alt={item.title}
-                            className="h-10 w-10 rounded-xl object-cover"
-                          />
-                        ) : (
-                          <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-200 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                            {item.title?.charAt(0) ?? 'N'}
-                          </span>
-                        )}
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-slate-800 dark:text-slate-200">
-                            {item.title}
-                          </p>
-                          <p className="text-xs" style={{ color: textSecondary }}>
-                            {item.clicks} 次访问                          </p>
+              {searchKeyword && (
+                <p className="text-xs text-slate-400">
+                  共找到 {searchResults.length} 条与 “{searchKeyword}” 相关的站点
+                </p>
+              )}
+            </form>
+          </section>
+
+          {searchKeyword ? (
+            <section className="space-y-4 rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-900">站内搜索结果</h3>
+                <button onClick={clearSearch} className="text-xs text-[color:var(--theme-accent)] hover:underline">
+                  返回全部
+                </button>
+              </div>
+              {searchResults.length === 0 ? (
+                <div className="py-16 text-center text-sm text-slate-400">没有匹配的内容，换个关键词试试吧。</div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {searchResults.map(link => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-4 transition hover:-translate-y-1 hover:border-[color:var(--theme-accent)]/60 hover:shadow-xl"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <h4 className="text-base font-semibold text-slate-900 group-hover:text-[color:var(--theme-accent)]">
+                            {link.title}
+                          </h4>
+                          <p className="line-clamp-2 text-xs text-slate-500">{link.description || "暂无描述"}</p>
                         </div>
-                      </button>
-                    ))}
-                  </div>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">{link.host}</span>
+                      </div>
+                      <div className="mt-3 inline-flex items-center gap-1 text-xs text-[color:var(--theme-accent)]">
+                        访问站点
+                        <span>→</span>
+                      </div>
+                    </a>
+                  ))}
                 </div>
               )}
-            </div>
-          </aside>
+            </section>
+          ) : (
+            <section className="space-y-6">
+              {displaySections.length > 0 ? (
+                displaySections.map(section => (
+                  <div
+                    key={section.id}
+                    className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">{section.title}</h3>
+                        {section.description ? (
+                          <p className="text-xs text-slate-400">{section.description}</p>
+                        ) : null}
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">{section.links.length} 个站点</span>
+                    </div>
 
-          <section
-            className="flex-[2] rounded-3xl border p-6 shadow-sm backdrop-blur"
-            style={{
-              borderColor: borderMuted,
-              backgroundColor: contentColor,
-            }}
-          >
-            <div className="flex flex-col gap-4 pb-6 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-sm" style={{ color: textSecondary }}>
-                  {searchQuery
-                    ? `搜索 “${searchQuery}” 的结果`
-                    : activeCategoryInfo.description}
-                </p>
-                <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                  {searchQuery ? '匹配到的站点' : activeCategoryInfo.title}
-                </h2>
-              </div>
-              {searchQuery && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchResults([]);
-                  }}
-                  className="self-start rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:text-slate-300"
-                >
-                  清除搜索
-                </button>
+                    <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      {section.links.map(link => (
+                        <a
+                          key={link.id}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-4 transition hover:-translate-y-1 hover:border-[color:var(--theme-accent)]/60 hover:shadow-xl"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-2">
+                              <h4 className="text-base font-semibold text-slate-900 group-hover:text-[color:var(--theme-accent)]">
+                                {link.title}
+                              </h4>
+                              <p className="line-clamp-2 text-xs text-slate-500">{link.description || "暂无描述"}</p>
+                            </div>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">{link.host}</span>
+                          </div>
+                          <div className="mt-3 inline-flex items-center gap-1 text-xs text-[color:var(--theme-accent)]">
+                            访问站点
+                            <span>→</span>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-200/80 bg-white/70 px-6 py-16 text-center text-sm text-slate-400">
+                  暂无数据，欢迎添加新的优质站点。
+                </div>
               )}
+            </section>
+          )}
+        </main>
+
+        <footer className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl lg:col-span-2">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-slate-900">{siteName || "导航站"} · 精选资源</h3>
+              <p className="text-sm text-slate-500">我们持续优化分类与站点信息，确保浏览体验清晰、舒适。</p>
+              <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                <span className="rounded-full bg-slate-100 px-3 py-1">人工甄选</span>
+                <span className="rounded-full bg-slate-100 px-3 py-1">结构清晰</span>
+                <span className="rounded-full bg-slate-100 px-3 py-1">定期巡检</span>
+              </div>
             </div>
 
-            {showGroupedView ? (
-              groupedSections.length > 0 ? (
-                <div className="space-y-8">
-                  {groupedSections.map(node => renderGroupedNode(node))}
+            <div className="w-full max-w-md space-y-3">
+              <h4 className="text-sm font-semibold text-slate-800">友情链接</h4>
+              {Array.isArray(config?.friendLinks) && config.friendLinks.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {config.friendLinks.map(item => (
+                    <a
+                      key={`${item.title}-${item.url}`}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500 transition hover:border-[color:var(--theme-accent)]/60 hover:text-[color:var(--theme-accent)]"
+                    >
+                      {item.title}
+                    </a>
+                  ))}
                 </div>
               ) : (
-                <div
-                  className="py-20 text-center text-sm"
-                  style={{ color: textSecondary }}
-                >
-                  暂未收录站点
-                </div>
-              )
-            ) : (
-              <>
-                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                  {displayedLinks.map(renderLinkCard)}
-                </div>
-
-                {displayedLinks.length === 0 && (
-                  <div
-                    className="py-20 text-center text-sm"
-                    style={{ color: textSecondary }}
-                  >
-                    {searchQuery ? '没有找到匹配的站点' : '该分类暂未添加站点'}
-                  </div>
-                )}
-              </>
-            )}
-          </section>
+                <p className="text-xs text-slate-400">欢迎合作互换链接，共建高质量导航生态。</p>
+              )}
+            </div>
+          </div>
+          <div className="mt-6 flex flex-col gap-2 border-t border-slate-200 pt-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+            <span>© {new Date().getFullYear()} {siteName || "导航站"} 版权所有</span>
+            <span>界面由 NavSite 设计与驱动</span>
+          </div>
+        </footer>
       </div>
-    </div>
 
       <AddLinkModal
         open={showSubmit}
         onClose={() => setShowSubmit(false)}
-        categories={categoryOptions}
+        categories={allNodes.map(item => ({ id: item.id, title: item.title }))}
         accentColor={accent}
       />
 
-      <footer
-        className={`mt-12 rounded-t-3xl border-t px-10 py-10 text-sm ${
-          darkMode
-            ? 'text-slate-200 shadow-[0_-30px_60px_-40px_rgba(15,23,42,0.9)]'
-            : 'text-slate-600 shadow-[0_-30px_60px_-40px_rgba(15,23,42,0.25)]'
-        }`}
-        style={{
-          borderTopColor: borderMuted,
-          backgroundImage: `linear-gradient(135deg, ${backgroundColor}, ${darkMode ? '#0f172a' : '#ffffff'})`,
-        }}
-      >
-        <div className="mx-auto flex w-full max-w-none flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div
-                className="grid h-12 w-12 place-items-center rounded-2xl bg-[color:var(--accent-color)] text-lg font-semibold text-white shadow-lg"
-                style={{ ['--accent-color' as any]: accent }}
-              >
-                {siteName?.charAt(0) ?? 'N'}
-              </div>
-              <div>
-                <p className="text-xl font-semibold text-slate-900 dark:text-white">
-                  {siteName || 'NavCraft'}
-                </p>
-                <p className="text-xs" style={{ color: textSecondary }}>
-                  © {currentYear} {siteName || 'NavCraft'} · Curated navigation library
-                </p>
-              </div>
-            </div>
-            <p className="max-w-xl text-sm" style={{ color: textSecondary }}>
-              We continue to refine the catalog so discovery, saving, and sharing stay effortless.
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => setShowSubmit(true)}
-                className="inline-flex items-center gap-2 rounded-full bg-[color:var(--accent-color)] px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
-                style={{ ['--accent-color' as any]: accent }}
-              >
-                Submit a site
-              </button>
-              <button
-                onClick={scrollToTop}
-                className="inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-medium transition hover:-translate-y-0.5"
-                style={{
-                  borderColor: borderMuted,
-                  backgroundColor: contentColor,
-                  color: textSecondary,
-                }}
-              >
-                ↑ Back to top
-              </button>
-            </div>
-          </div>
-
-          <div className="w-full max-w-md space-y-4">
-            <div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Partner links</p>
-              <p className="text-xs" style={{ color: textSecondary }}>Trusted partners keep the ecosystem fresh.</p>
-            </div>
-            {friendLinks.length > 0 ? (
-              <div className="flex flex-wrap gap-3">
-                {friendLinks.map(link => (
-                  <a
-                    key={`${link.title}-${link.url}`}
-                    href={link.url}
-                    className="rounded-full border px-4 py-1.5 text-xs font-medium transition hover:-translate-y-0.5"
-                    style={{
-                      borderColor: borderMuted,
-                      backgroundColor: contentColor,
-                      color: textSecondary,
-                    }}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {link.title}
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs" style={{ color: textSecondary }}>
-                We welcome link exchanges to share great resources together.
-              </p>
-            )}
-          </div>
-        </div>
-      </footer>
       {showScrollTop && (
         <button
-          onClick={scrollToTop}
-          className="fixed bottom-10 right-10 z-40 flex h-12 w-12 items-center justify-center rounded-full border text-lg font-semibold shadow-lg transition hover:-translate-y-1"
-          style={{
-            borderColor: borderMuted,
-            backgroundColor: contentColor,
-            color: textSecondary,
-          }}
-          aria-label="Back to top"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-8 right-8 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--theme-accent)] text-lg font-semibold text-white shadow-xl transition hover:-translate-y-1 hover:opacity-90"
+          aria-label="返回顶部"
         >
           ↑
         </button>

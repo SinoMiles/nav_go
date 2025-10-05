@@ -45,11 +45,11 @@ export default function LinksPage() {
 
     const text =
       flash === 'created'
-        ? 'Link saved successfully'
+        ? '链接创建成功'
         : flash === 'updated'
-        ? 'Link updated successfully'
+        ? '链接更新成功'
         : flash === 'deleted'
-        ? 'Link removed successfully'
+        ? '链接删除成功'
         : '';
 
     if (text) {
@@ -66,20 +66,20 @@ export default function LinksPage() {
       const res = await fetch(`/api/links?page=${targetPage}&limit=${PAGE_SIZE}`);
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to fetch links');
+        throw new Error(data.error || '加载链接失败');
       }
 
       setLinks(data.links || []);
       setPagination(data.pagination || null);
     } catch (error) {
-      console.error('Failed to load links:', error);
+      console.error('加载链接失败:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('This link will be permanently removed. Continue?')) {
+    if (!confirm('该链接将被永久删除，是否继续？')) {
       return;
     }
 
@@ -92,15 +92,15 @@ export default function LinksPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to delete link');
+        throw new Error(data.error || '删除失败');
       }
 
-      setMessage('Link removed successfully');
+      setMessage('链接删除成功');
       setTimeout(() => setMessage(''), 3000);
       await loadLinks(page);
       router.replace('/admin/links?flash=deleted', { scroll: false });
     } catch (error: any) {
-      alert(error?.message || 'Unable to delete this link. Please try again.');
+      alert(error?.message || '无法删除该链接，请稍后重试。');
     }
   };
 
@@ -113,54 +113,53 @@ export default function LinksPage() {
   };
 
   const categoryName = (record: LinkRecord) => {
-    if (!record.categoryId) return 'None';
+    if (!record.categoryId) return '未分类';
     if (typeof record.categoryId === 'string') return record.categoryId;
-    return record.categoryId?.title ?? 'None';
+    return record.categoryId?.title ?? '未分类';
   };
 
   const statusBadge = useMemo(() => ({
-    pending: { label: 'Pending', classes: 'border-yellow-400/40 bg-yellow-500/20 text-yellow-100' },
-    approved: { label: 'Approved', classes: 'border-emerald-400/40 bg-emerald-500/20 text-emerald-200' },
-    rejected: { label: 'Rejected', classes: 'border-rose-400/40 bg-rose-500/20 text-rose-100' },
+    pending: { label: '待审核', classes: 'border-yellow-400/40 bg-yellow-500/20 text-yellow-100' },
+    approved: { label: '已通过', classes: 'border-emerald-400/40 bg-emerald-500/20 text-emerald-200' },
+    rejected: { label: '已拒绝', classes: 'border-rose-400/40 bg-rose-500/20 text-rose-100' },
   }), []);
+
+  const totalPages = pagination?.totalPages ?? Math.max(1, Math.ceil((pagination?.total ?? links.length) / PAGE_SIZE));
+  const totalLinks = pagination?.total ?? links.length;
 
   if (loading) {
     return (
       <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 text-sm text-slate-300">
         <span className="inline-flex h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-        Loading links...
+        链接数据加载中…
       </div>
     );
   }
 
-  const totalPages = pagination?.totalPages ?? 1;
-  const totalLinks = pagination?.total ?? links.length;
-
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Links</h1>
-          <p className="text-sm text-slate-300/80">
-            Maintain the navigation catalogue, approve submissions and ensure every resource stays reachable.
-          </p>
+      <header className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 text-slate-100">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-white">链接管理</h1>
+            <p className="text-sm text-slate-300/80">维护导航链接条目、调整展示顺序并审核提交。</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleCreate}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+            >
+              新建链接
+            </button>
+            <button
+              onClick={() => void loadLinks(page)}
+              className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/20"
+            >
+              刷新数据
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleCreate}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
-          >
-            <span>+</span>
-            New link
-          </button>
-          <button
-            onClick={() => loadLinks(page)}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
+      </header>
 
       {message && (
         <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
@@ -172,12 +171,12 @@ export default function LinksPage() {
         <table className="w-full border-collapse text-sm text-slate-200">
           <thead className="bg-white/5 text-xs uppercase tracking-[0.2em] text-slate-300">
             <tr>
-              <th className="px-6 py-4 text-left font-medium">Name</th>
-              <th className="px-6 py-4 text-left font-medium">URL</th>
-              <th className="px-6 py-4 text-left font-medium">Category</th>
-              <th className="px-6 py-4 text-left font-medium">Review</th>
-              <th className="px-6 py-4 text-left font-medium">Visible</th>
-              <th className="px-6 py-4 text-right font-medium">Actions</th>
+              <th className="px-6 py-4 text-left font-medium">名称</th>
+              <th className="px-6 py-4 text-left font-medium">链接地址</th>
+              <th className="px-6 py-4 text-left font-medium">所属分类</th>
+              <th className="px-6 py-4 text-left font-medium">审核状态</th>
+              <th className="px-6 py-4 text-left font-medium">显示状态</th>
+              <th className="px-6 py-4 text-right font-medium">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -192,7 +191,7 @@ export default function LinksPage() {
                         <span className="text-xs text-slate-300/80">{link.description}</span>
                       )}
                       {link.tags && link.tags.length > 0 && (
-                        <span className="text-xs text-slate-400">Tags: {link.tags.slice(0, 3).join(', ')}</span>
+                        <span className="text-xs text-slate-400">标签：{link.tags.slice(0, 3).join('，')}</span>
                       )}
                     </div>
                   </td>
@@ -215,7 +214,7 @@ export default function LinksPage() {
                           : 'border border-white/10 bg-white/5 text-slate-300'
                       }`}
                     >
-                      {link.enabled ? 'Visible' : 'Hidden'}
+                      {link.enabled ? '显示' : '隐藏'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -224,13 +223,13 @@ export default function LinksPage() {
                         onClick={() => handleEdit(link._id)}
                         className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs text-slate-200 transition hover:border-white/20 hover:bg-white/10"
                       >
-                        Edit
+                        编辑
                       </button>
                       <button
                         onClick={() => handleDelete(link._id)}
                         className="rounded-full border border-rose-400/40 bg-rose-500/15 px-4 py-1 text-xs text-rose-100 transition hover:border-rose-400/60 hover:bg-rose-500/25"
                       >
-                        Delete
+                        删除
                       </button>
                     </div>
                   </td>
@@ -242,7 +241,7 @@ export default function LinksPage() {
 
         {links.length === 0 && (
           <div className="py-16 text-center text-sm text-slate-300/80">
-            No links found. Use the "New link" button to add one.
+            暂无链接，可通过“新建链接”按钮添加。
           </div>
         )}
       </div>
@@ -250,7 +249,7 @@ export default function LinksPage() {
       {totalPages > 1 && (
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-xs text-slate-200">
           <p>
-            Page {pagination?.page ?? 1} / {totalPages} - {totalLinks} entries
+            第 {pagination?.page ?? 1} / {totalPages} 页 · {totalLinks} 条记录
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -258,7 +257,7 @@ export default function LinksPage() {
               className="rounded-full border border-white/10 px-3 py-1 transition hover:border-white/20 hover:bg-white/5"
               disabled={(pagination?.page ?? 1) === 1}
             >
-              Prev
+              上一页
             </button>
             {Array.from({ length: totalPages }, (_, index) => index + 1).map(pageNumber => (
               <button
@@ -278,7 +277,7 @@ export default function LinksPage() {
               className="rounded-full border border-white/10 px-3 py-1 transition hover:border-white/20 hover:bg-white/5"
               disabled={(pagination?.page ?? 1) === totalPages}
             >
-              Next
+              下一页
             </button>
           </div>
         </div>

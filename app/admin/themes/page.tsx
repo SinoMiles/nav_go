@@ -33,6 +33,12 @@ export default function ThemesPage() {
     }
   }, [themes]);
 
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(''), 3000);
+    return () => clearTimeout(timer);
+  }, [message]);
+
   const loadThemes = async () => {
     try {
       const token = localStorage.getItem('admin_token');
@@ -45,8 +51,8 @@ export default function ThemesPage() {
       );
       setThemes(filtered);
     } catch (error) {
-      console.error('Failed to load themes:', error);
-      setMessage('Unable to load theme list. Try again later.');
+      console.error('加载主题失败:', error);
+      setMessage('主题列表加载失败，请稍后重试。');
     } finally {
       setLoading(false);
     }
@@ -58,7 +64,7 @@ export default function ThemesPage() {
       const data = await res.json();
       setActiveTheme(data.settings?.activeTheme || '');
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      console.error('加载主题设置失败:', error);
     }
   };
 
@@ -81,7 +87,7 @@ export default function ThemesPage() {
           urls[theme.name] = data.previewUrl;
         }
       } catch (error) {
-        console.error(`Unable to generate preview for ${theme.name}:`, error);
+        console.error(`生成主题预览失败：${theme.name}`, error);
       }
     }
 
@@ -103,14 +109,14 @@ export default function ThemesPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to activate theme');
+        throw new Error(data.error || '主题启用失败');
       }
 
       setActiveTheme(themeName);
-      setMessage('Theme activated successfully.');
+      setMessage('主题启用成功。');
     } catch (error: any) {
-      console.error('Failed to activate theme:', error);
-      setMessage(error?.message || 'Activation failed, please retry.');
+      console.error('启用主题失败:', error);
+      setMessage(error?.message || '启用失败，请稍后重试。');
     } finally {
       setPending(null);
     }
@@ -119,7 +125,7 @@ export default function ThemesPage() {
   const handlePreview = (themeName: string) => {
     const url = previewUrls[themeName];
     if (!url) {
-      setMessage('Preview is still generating. Please try again shortly.');
+      setMessage('预览仍在生成，请稍后再试。');
       return;
     }
     window.open(url, '_blank');
@@ -129,7 +135,7 @@ export default function ThemesPage() {
     return (
       <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-300">
         <span className="inline-flex h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-white" />
-        <span className="ml-3">Loading theme catalog...</span>
+        <span className="ml-3">主题数据加载中...</span>
       </div>
     );
   }
@@ -139,17 +145,17 @@ export default function ThemesPage() {
       <header className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 text-slate-100 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.9)]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Themes</p>
-            <h1 className="mt-2 text-2xl font-semibold text-white">Visual layouts</h1>
+            <p className="text-xs tracking-[0.3em] text-slate-400">主题库</p>
+            <h1 className="mt-2 text-2xl font-semibold text-white">主题布局管理</h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-300/85">
-              Switch between official layouts, preview changes in real time, and keep your navigation experience consistent across devices.
+              在此切换官方主题，实时预览效果，确保导航站点在不同终端拥有一致体验。
             </p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-xs text-slate-200">
             <div className="flex items-center gap-3">
               <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-              <span>Active theme: </span>
-              <strong className="text-white">{activeTheme || 'Not set'}</strong>
+              <span>当前主题：</span>
+              <strong className="text-white">{activeTheme || '未设置'}</strong>
             </div>
           </div>
         </div>
@@ -184,12 +190,12 @@ export default function ThemesPage() {
                 ) : (
                   <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-slate-400">
                     <span className="inline-flex h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
-                    Generating preview...
+                    预览生成中...
                   </div>
                 )}
                 {isActive && (
                   <div className="absolute left-5 top-5 rounded-full bg-indigo-500/90 px-3 py-1 text-xs font-semibold text-white shadow">
-                    Active
+                    已启用
                   </div>
                 )}
               </div>
@@ -198,14 +204,14 @@ export default function ThemesPage() {
                 <div className="space-y-1">
                   <h2 className="text-lg font-semibold text-white">{theme.title}</h2>
                   <p className="text-sm text-slate-300/85">
-                    {theme.description || 'Official navigation layout built for fast browsing.'}
+                    {theme.description || '官方导航主题，专为高效浏览体验打造。'}
                   </p>
                 </div>
 
                 <div className="grid gap-2 text-xs text-slate-400 sm:grid-cols-3">
-                  <span>Version: {theme.version}</span>
-                  <span>Author: {theme.author || 'NavCraft Studio'}</span>
-                  <span>Identifier: {theme.name}</span>
+                  <span>版本：{theme.version}</span>
+                  <span>作者：{theme.author || 'NavCraft 团队'}</span>
+                  <span>标识：{theme.name}</span>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -213,7 +219,7 @@ export default function ThemesPage() {
                     onClick={() => handlePreview(theme.name)}
                     className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:border-white/30 hover:bg-white/10"
                   >
-                    Preview
+                    预览
                   </button>
                   <button
                     onClick={() => handleActivate(theme.name)}
@@ -224,7 +230,7 @@ export default function ThemesPage() {
                         : 'border border-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-sky-500 text-white hover:opacity-90'
                     }`}
                   >
-                    {pending === theme.name ? 'Activating...' : isActive ? 'In use' : 'Activate'}
+                    {pending === theme.name ? '启用中…' : isActive ? '正在使用' : '启用主题'}
                   </button>
                 </div>
               </div>
@@ -235,7 +241,7 @@ export default function ThemesPage() {
 
       {themes.length === 0 && (
         <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-10 text-center text-sm text-slate-300/80">
-          No themes available yet. Please install an official layout from the repository.
+          暂无可用主题，请从官方仓库安装主题后重试。
         </div>
       )}
     </div>
