@@ -21,35 +21,57 @@ export const Sidebar = ({
   footerOffset,
   tagline,
 }: SidebarProps) => {
-  const displayTagline = useMemo(() => (tagline && tagline.trim().length > 0 ? tagline.trim() : "优雅 永不过时..."), [tagline]);
+  const displayTagline = useMemo(
+    () => (tagline && tagline.trim().length > 0 ? tagline.trim() : "优雅 永不过时..."),
+    [tagline],
+  );
   const [typedText, setTypedText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [pause, setPause] = useState(false);
   const [caretVisible, setCaretVisible] = useState(true);
 
   useEffect(() => {
-    let current = 0;
-    let mounted = true;
     setTypedText("");
+    setIsDeleting(false);
+    setPause(false);
+  }, [displayTagline]);
 
-    const typing = setInterval(() => {
-      if (!mounted) return;
-      current += 1;
-      if (current <= displayTagline.length) {
-        setTypedText(displayTagline.slice(0, current));
-      } else {
-        clearInterval(typing);
-      }
-    }, 110);
-
-    const caret = setInterval(() => {
+  useEffect(() => {
+    const caretTimer = setInterval(() => {
       setCaretVisible(prev => !prev);
     }, 650);
+    return () => clearInterval(caretTimer);
+  }, []);
 
-    return () => {
-      mounted = false;
-      clearInterval(typing);
-      clearInterval(caret);
-    };
-  }, [displayTagline]);
+  useEffect(() => {
+    if (pause) {
+      const pauseTimer = setTimeout(() => setPause(false), isDeleting ? 420 : 1100);
+      return () => clearTimeout(pauseTimer);
+    }
+
+    const fullText = displayTagline;
+    const typingTimer = setTimeout(() => {
+      setTypedText(prev => {
+        if (!isDeleting) {
+          const next = fullText.slice(0, prev.length + 1);
+          if (next === fullText) {
+            setPause(true);
+            setIsDeleting(true);
+          }
+          return next;
+        }
+
+        const next = fullText.slice(0, Math.max(prev.length - 1, 0));
+        if (next.length === 0) {
+          setPause(true);
+          setIsDeleting(false);
+        }
+        return next;
+      });
+    }, isDeleting ? 70 : 120);
+
+    return () => clearTimeout(typingTimer);
+  }, [displayTagline, isDeleting, pause, typedText]);
 
   const style = footerOffset > 0 ? { paddingBottom: `${footerOffset}px` } : undefined;
 
@@ -59,12 +81,15 @@ export const Sidebar = ({
       style={style}
     >
       <div className="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-slate-50 px-6 py-6 shadow-xl">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h1 className="text-2xl font-semibold text-slate-900">{siteName || "NavGo"}</h1>
-          <div className="min-h-[2.25rem] text-[28px] font-light leading-tight tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-slate-500 via-slate-700 to-[color:var(--theme-accent)]" style={{ ['--theme-accent' as any]: accent }}>
-            <span>{typedText}</span>
+          <div
+            className="min-h-[2.75rem] text-[30px] leading-tight tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-slate-700 to-[color:var(--theme-accent)]"
+            style={{ ['--theme-accent' as any]: accent, fontFamily: '"Playfair Display", "Times New Roman", serif' }}
+          >
+            <span className="whitespace-pre">{typedText}</span>
             <span
-              className={`ml-1 inline-block h-6 w-[2px] bg-[color:var(--theme-accent)] transition-opacity ${caretVisible ? "opacity-80" : "opacity-10"}`}
+              className={`ml-1 inline-block h-7 w-[2px] bg-[color:var(--theme-accent)] transition-opacity duration-300 ${caretVisible ? "opacity-90" : "opacity-20"}`}
               style={{ ['--theme-accent' as any]: accent }}
             />
           </div>
