@@ -13,28 +13,25 @@ const ActionButton = ({
   label,
   onClick,
   active,
-  accent,
   icon,
 }: {
   label: string;
   onClick: () => void;
   active?: boolean;
-  accent: string;
   icon: ReactNode;
 }) => (
   <button
     type="button"
     onClick={onClick}
     className={`flex flex-1 flex-col items-center gap-1 text-[11px] font-medium transition ${
-      active ? "text-[color:var(--theme-accent)]" : "text-slate-500"
+      active ? "text-white" : "text-white/70"
     }`}
-    style={{ ['--theme-accent' as any]: accent }}
   >
     <span
       className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm transition ${
         active
-          ? "border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)]/15"
-          : "border-slate-200 bg-white"
+          ? "border-white bg-white/20"
+          : "border-white/30 bg-white/10"
       }`}
     >
       {icon}
@@ -59,7 +56,6 @@ export const MobileBottomBar = ({
       <ActionButton
         label="分类"
         onClick={onOpenMenu}
-        accent={accent}
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -79,7 +75,6 @@ export const MobileBottomBar = ({
         label="全部"
         onClick={onClearFilter}
         active={!hasActiveFilter}
-        accent="#ffffff"
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -99,7 +94,6 @@ export const MobileBottomBar = ({
       <ActionButton
         label="投稿"
         onClick={onOpenSubmit}
-        accent={accent}
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -119,7 +113,6 @@ export const MobileBottomBar = ({
       <ActionButton
         label="顶部"
         onClick={onScrollTop}
-        accent={accent}
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"

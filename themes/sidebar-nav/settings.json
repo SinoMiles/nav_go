@@ -19,6 +19,12 @@
       "type": "color",
       "label": "背景色",
       "default": "#e2e8f0"
+    },
+    "headerTagline": {
+      "type": "string",
+      "label": "头部标语",
+      "placeholder": "优雅 永不过时...",
+      "default": "优雅 永不过时..."
     }
   }
 }

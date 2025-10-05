@@ -1,3 +1,5 @@
+import { useEffect, useMemo, useState } from "react";
+
 import type { NormalizedCategory } from "../types";
 
 type SidebarProps = {
@@ -6,8 +8,8 @@ type SidebarProps = {
   roots: NormalizedCategory[];
   activeRoot: string | null;
   onRootSelect: (rootId: string | null) => void;
-  onOpenSubmit: () => void;
   footerOffset: number;
+  tagline?: string | null;
 };
 
 export const Sidebar = ({
@@ -16,9 +18,39 @@ export const Sidebar = ({
   roots,
   activeRoot,
   onRootSelect,
-  onOpenSubmit,
   footerOffset,
+  tagline,
 }: SidebarProps) => {
+  const displayTagline = useMemo(() => (tagline && tagline.trim().length > 0 ? tagline.trim() : "优雅 永不过时..."), [tagline]);
+  const [typedText, setTypedText] = useState("");
+  const [caretVisible, setCaretVisible] = useState(true);
+
+  useEffect(() => {
+    let current = 0;
+    let mounted = true;
+    setTypedText("");
+
+    const typing = setInterval(() => {
+      if (!mounted) return;
+      current += 1;
+      if (current <= displayTagline.length) {
+        setTypedText(displayTagline.slice(0, current));
+      } else {
+        clearInterval(typing);
+      }
+    }, 110);
+
+    const caret = setInterval(() => {
+      setCaretVisible(prev => !prev);
+    }, 650);
+
+    return () => {
+      mounted = false;
+      clearInterval(typing);
+      clearInterval(caret);
+    };
+  }, [displayTagline]);
+
   const style = footerOffset > 0 ? { paddingBottom: `${footerOffset}px` } : undefined;
 
   return (
@@ -29,16 +61,15 @@ export const Sidebar = ({
       <div className="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-slate-50 px-6 py-6 shadow-xl">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-slate-900">{siteName || "NavGo"}</h1>
+          <div className="min-h-[2.25rem] text-[28px] font-light leading-tight tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-slate-500 via-slate-700 to-[color:var(--theme-accent)]" style={{ ['--theme-accent' as any]: accent }}>
+            <span>{typedText}</span>
+            <span
+              className={`ml-1 inline-block h-6 w-[2px] bg-[color:var(--theme-accent)] transition-opacity ${caretVisible ? "opacity-80" : "opacity-10"}`}
+              style={{ ['--theme-accent' as any]: accent }}
+            />
+          </div>
           <p className="text-sm text-slate-500">精选优质站点，快速抵达你的灵感目的地。</p>
         </div>
-        <button
-          type="button"
-          onClick={onOpenSubmit}
-          className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl"
-          style={{ backgroundColor: accent }}
-        >
-          提交站点
-        </button>
       </div>
 
       <nav className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-5 py-6 shadow-xl">

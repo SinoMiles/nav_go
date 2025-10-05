@@ -45,6 +45,7 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
   const accent = config?.primaryColor || "#eb247a";
   const surface = config?.contentColor || "#ffffff";
   const background = config?.backgroundColor || "#f8fafc";
+  const headerTagline = typeof (config as any)?.headerTagline === "string" ? (config as any).headerTagline : null;
 
   const themeVars = useMemo(
     () =>
@@ -260,8 +261,8 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
               roots={roots}
               activeRoot={activeRoot}
               onRootSelect={handleRootSelect}
-              onOpenSubmit={openSubmitModal}
               footerOffset={sidebarOffset}
+              tagline={headerTagline}
             />
 
             <main className="space-y-6 sm:space-y-8 lg:space-y-10">
@@ -350,7 +351,17 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
               </div>
 
               <div className="w-full max-w-md space-y-3">
-                <h4 className="text-sm font-semibold text-slate-800">友情链接</h4>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h4 className="text-sm font-semibold text-slate-800">友情链接</h4>
+                  <button
+                    type="button"
+                    onClick={openSubmitModal}
+                    className="inline-flex items-center gap-2 rounded-full border border-[color:var(--theme-accent)]/40 bg-[color:var(--theme-accent)]/10 px-4 py-2 text-xs font-semibold text-[color:var(--theme-accent)] transition hover:bg-[color:var(--theme-accent)]/20"
+                    style={{ ['--theme-accent' as any]: accent }}
+                  >
+                    提交站点
+                  </button>
+                </div>
                 {Array.isArray(config?.friendLinks) && config.friendLinks.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {config.friendLinks.map(item => (
