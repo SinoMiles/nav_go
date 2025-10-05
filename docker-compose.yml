@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  navcraft:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: navcraft-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://NavCraft:3afnijdxHaMrJHsT@39.98.161.189:27017/navcraft
+      - NEXTAUTH_SECRET=your-nextauth-secret-key-change-this-in-production
+      - NEXTAUTH_URL=http://localhost:3000
+      - JWT_SECRET=your-jwt-secret-key-change-this-in-production
+    volumes:
+      - ./uploads:/app/uploads
+      - ./public/themes:/app/public/themes
+    networks:
+      - navcraft-network
+
+networks:
+  navcraft-network:
+    driver: bridge

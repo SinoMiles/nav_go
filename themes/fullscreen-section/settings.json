@@ -1,0 +1,8 @@
+{
+  "name": "fullscreen-section",
+  "title": "全屏分屏",
+  "description": "全屏分屏展示，支持左右切换和自动播放，适合演示和展示",
+  "version": "1.0.0",
+  "author": "NavCraft",
+  "configSchema": {}
+}

@@ -1,0 +1,12 @@
+.env.local
+node_modules
+.next
+.DS_Store
+dist
+*.log
+*.tsbuildinfo
+uploads/
+public/themes/
+.vercel
+# Ignore Windows reserved output file from archives
+nul
