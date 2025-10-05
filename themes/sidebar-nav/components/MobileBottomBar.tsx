@@ -52,7 +52,10 @@ export const MobileBottomBar = ({
   onScrollTop,
 }: MobileBottomBarProps) => (
   <nav className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center lg:hidden">
-    <div className="pointer-events-auto flex w-[min(440px,92%)] items-center justify-between rounded-3xl border border-white/25 bg-[color:var(--theme-surface)]/95 px-4 py-3 shadow-2xl backdrop-blur">
+    <div
+      className="pointer-events-auto flex w-[min(440px,92%)] items-center justify-between rounded-3xl border border-white/20 px-4 py-3 text-white shadow-2xl backdrop-blur"
+      style={{ backgroundColor: accent }}
+    >
       <ActionButton
         label="分类"
         onClick={onOpenMenu}
@@ -76,7 +79,7 @@ export const MobileBottomBar = ({
         label="全部"
         onClick={onClearFilter}
         active={!hasActiveFilter}
-        accent={accent}
+        accent="#ffffff"
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
