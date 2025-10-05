@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 
 import AddLinkModal from "@/themes/shared/AddLinkModal";
 import type { ThemeProps } from "@/lib/types/theme";
@@ -43,11 +43,12 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
   const background = config?.backgroundColor || "#f8fafc";
 
   const themeVars = useMemo(
-    () => ({
-      "--theme-accent": accent,
-      "--theme-surface": surface,
-      "--theme-background": background,
-    }),
+    () =>
+      ({
+        "--theme-accent": accent,
+        "--theme-surface": surface,
+        "--theme-background": background,
+      }) as CSSProperties,
     [accent, surface, background],
   );
 

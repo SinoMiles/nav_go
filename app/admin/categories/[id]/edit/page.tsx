@@ -28,6 +28,10 @@ export default function EditCategoryPage() {
   const [message, setMessage] = useState('');
   const [formData, setFormData] = useState<FormState | null>(null);
 
+  const updateForm = (patch: Partial<FormState>) => {
+    setFormData(prev => (prev ? { ...prev, ...patch } : prev));
+  };
+
   useEffect(() => {
     if (!categoryId) return;
     void Promise.all([loadCategory(), loadOptions()]);
@@ -150,7 +154,7 @@ export default function EditCategoryPage() {
               <input
                 type="text"
                 value={formData.title}
-                onChange={event => setFormData(prev => ({ ...prev, title: event.target.value }))}
+                onChange={event => updateForm({ title: event.target.value })}
                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
                 placeholder="e.g. Inspiration"
                 required
@@ -161,7 +165,7 @@ export default function EditCategoryPage() {
               <input
                 type="text"
                 value={formData.slug}
-                onChange={event => setFormData(prev => ({ ...prev, slug: event.target.value }))}
+                onChange={event => updateForm({ slug: event.target.value })}
                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
                 placeholder="e.g. design"
                 required
@@ -173,7 +177,7 @@ export default function EditCategoryPage() {
             <label className="text-sm font-medium text-slate-200">Description</label>
             <textarea
               value={formData.description}
-              onChange={event => setFormData(prev => ({ ...prev, description: event.target.value }))}
+              onChange={event => updateForm({ description: event.target.value })}
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
               rows={3}
               placeholder="Visible on the public site (optional)"
@@ -186,7 +190,7 @@ export default function EditCategoryPage() {
               <input
                 type="number"
                 value={formData.order}
-                onChange={event => setFormData(prev => ({ ...prev, order: Number(event.target.value) }))}
+                onChange={event => updateForm({ order: Number(event.target.value) || 0 })}
                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
               />
             </div>
@@ -194,7 +198,7 @@ export default function EditCategoryPage() {
               <label className="text-sm font-medium text-slate-200">Parent category</label>
               <select
                 value={formData.parentId}
-                onChange={event => setFormData(prev => ({ ...prev, parentId: event.target.value }))}
+                onChange={event => updateForm({ parentId: event.target.value })}
                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
               >
                 <option value="">None (top level)</option>
@@ -213,7 +217,7 @@ export default function EditCategoryPage() {
               id="category-enabled"
               type="checkbox"
               checked={formData.enabled}
-              onChange={event => setFormData(prev => ({ ...prev, enabled: event.target.checked }))}
+              onChange={event => updateForm({ enabled: event.target.checked })}
               className="h-4 w-4 rounded border-white/20 bg-white/10 text-white focus:ring-white/30"
             />
             <label htmlFor="category-enabled" className="text-sm font-medium text-slate-200">

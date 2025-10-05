@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Types } from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { verifyPassword, generateToken } from '@/lib/auth';
@@ -36,12 +37,13 @@ export async function POST(req: NextRequest) {
     }
 
     // 生成令牌
-    const token = generateToken(user._id.toString(), user.role);
+    const userId = user._id instanceof Types.ObjectId ? user._id.toHexString() : String(user._id);
+    const token = generateToken(userId, user.role);
 
     return NextResponse.json({
       message: '登录成功',
       user: {
-        id: user._id,
+        id: userId,
         email: user.email,
         name: user.name,
         role: user.role,

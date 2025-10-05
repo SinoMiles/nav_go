@@ -100,7 +100,8 @@ async function seedSampleCategories() {
       order: root.order ?? 0,
       enabled: true,
     });
-    idMap.set(root.id, rootDoc._id);
+    const rootObjectId = rootDoc._id as Types.ObjectId;
+    idMap.set(root.id, rootObjectId);
 
     for (const child of root.children ?? []) {
       const childDoc = await Category.create({
@@ -109,9 +110,9 @@ async function seedSampleCategories() {
         description: child.description,
         order: child.order ?? 0,
         enabled: true,
-        parentId: rootDoc._id,
+        parentId: rootObjectId,
       });
-      idMap.set(child.id, childDoc._id);
+      idMap.set(child.id, childDoc._id as Types.ObjectId);
     }
   }
 

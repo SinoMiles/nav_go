@@ -238,7 +238,7 @@ export default function FullscreenSectionTheme({
 
                   {link.tags && link.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 text-xs">
-                      {link.tags.slice(0, 3).map(tag => (
+                      {link.tags.slice(0, 3).map((tag: string) => (
                         <span
                           key={tag}
                           className="rounded-full bg-white/10 px-2 py-1 text-white/70"

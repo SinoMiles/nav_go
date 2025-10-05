@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Types } from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import SearchEngineGroup from '@/models/SearchEngineGroup';
 import { withAdminAuth } from '@/lib/middleware';
+
+const toIdString = (value: unknown) =>
+  value instanceof Types.ObjectId ? value.toHexString() : String(value ?? '');
 
 export async function GET() {
   try {
@@ -13,7 +17,7 @@ export async function GET() {
     return NextResponse.json({
       groups: groups.map(group => ({
         ...group,
-        _id: group._id.toString(),
+        _id: toIdString(group._id),
         engines: (group.engines || []).map(engine => ({ ...engine })),
       })),
     });
@@ -64,7 +68,7 @@ export async function POST(req: NextRequest) {
         message: '搜索分组已创建',
         group: {
           ...created.toObject(),
-          _id: created._id.toString(),
+          _id: toIdString(created._id),
         },
       });
     } catch (error) {

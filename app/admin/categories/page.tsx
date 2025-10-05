@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 
 interface CategoryRecord {
   _id: string;
@@ -33,7 +33,7 @@ const sortCategories = (list: CategoryRecord[]) =>
     return orderDiff !== 0 ? orderDiff : a.title.localeCompare(b.title, 'zh-CN');
   });
 
-export default function CategoriesPage() {
+function CategoriesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [categories, setCategories] = useState<CategoryRecord[]>([]);
@@ -336,5 +336,20 @@ export default function CategoriesPage() {
         )}
       </section>
     </div>
+  );
+}
+
+const SuspenseFallback = () => (
+  <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-sm text-slate-300">
+    <span className="inline-flex h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+    加载中，请稍候...
+  </div>
+);
+
+export default function CategoriesPage() {
+  return (
+    <Suspense fallback={<SuspenseFallback />}>
+      <CategoriesContent />
+    </Suspense>
   );
 }

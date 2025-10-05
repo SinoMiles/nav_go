@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface LinkRecord {
@@ -26,7 +26,7 @@ interface PaginationMeta {
 
 const PAGE_SIZE = 10;
 
-export default function LinksPage() {
+function LinksContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [links, setLinks] = useState<LinkRecord[]>([]);
@@ -283,5 +283,20 @@ export default function LinksPage() {
         </div>
       )}
     </div>
+  );
+}
+
+const LinksSuspenseFallback = () => (
+  <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-sm text-slate-300">
+    <span className="inline-flex h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+    链接数据加载中，请稍候...
+  </div>
+);
+
+export default function LinksPage() {
+  return (
+    <Suspense fallback={<LinksSuspenseFallback />}>
+      <LinksContent />
+    </Suspense>
   );
 }

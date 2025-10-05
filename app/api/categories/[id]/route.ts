@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Types } from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import Category from '@/models/Category';
 import { withAdminAuth } from '@/lib/middleware';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type CategoryRouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export async function GET(request: NextRequest, context: CategoryRouteContext) {
   try {
     await connectDB();
 
-    const category = await Category.findById(params.id);
+    const { id } = await context.params;
+
+    const category = await Category.findById(id);
 
     if (!category) {
       return NextResponse.json(
@@ -29,18 +35,17 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return withAdminAuth(req, async (req, user) => {
+export async function PUT(request: NextRequest, context: CategoryRouteContext) {
+  const { id } = await context.params;
+
+  return withAdminAuth(request, async (req, user) => {
     try {
       await connectDB();
 
       const body = await req.json();
       const { title, slug, description, order, enabled, parentId } = body;
 
-      const category = await Category.findById(params.id);
+      const category = await Category.findById(id);
 
       if (!category) {
         return NextResponse.json(
@@ -48,6 +53,8 @@ export async function PUT(
           { status: 404 }
         );
       }
+
+      const currentId = category._id instanceof Types.ObjectId ? category._id.toHexString() : String(category._id);
 
       // 如果修改了slug，检查是否重复
       if (slug && slug !== category.slug) {
@@ -65,7 +72,7 @@ export async function PUT(
         if (!parentId) {
           category.parentId = undefined;
         } else {
-          if (parentId === category._id.toString()) {
+          if (parentId === currentId) {
             return NextResponse.json(
               { error: '不能选择自身为父级分类' },
               { status: 400 }
@@ -85,7 +92,7 @@ export async function PUT(
               { status: 400 }
             );
           }
-          category.parentId = parent._id;
+          category.parentId = parent._id as typeof category.parentId;
         }
       }
 
@@ -110,15 +117,14 @@ export async function PUT(
   });
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return withAdminAuth(req, async (req, user) => {
+export async function DELETE(request: NextRequest, context: CategoryRouteContext) {
+  const { id } = await context.params;
+
+  return withAdminAuth(request, async (req, user) => {
     try {
       await connectDB();
 
-      const category = await Category.findByIdAndDelete(params.id);
+      const category = await Category.findByIdAndDelete(id);
 
       if (!category) {
         return NextResponse.json(
