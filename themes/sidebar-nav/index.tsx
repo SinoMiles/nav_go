@@ -279,6 +279,10 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
                 selectedGroup={selectedGroup}
                 selectedEngineKey={selectedEngineKey}
                 onEngineSelect={handleEngineSelect}
+                activeRootTitle={activeRootSection?.root.title ?? null}
+                childCategories={activeRootSection?.childCategories}
+                activeChildId={activeChild}
+                onChildSelect={handleChildSelect}
               />
 
               {searchKeyword ? (

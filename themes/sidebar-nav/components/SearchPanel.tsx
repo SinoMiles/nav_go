@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 
-import type { SearchEngine, SearchGroup } from "../types";
+import { CategoryFilterChips } from "./CategoryFilterChips";
+import type { NormalizedCategory, SearchEngine, SearchGroup } from "../types";
 
 type SearchPanelProps = {
   accent: string;
@@ -16,6 +17,10 @@ type SearchPanelProps = {
   selectedGroup?: SearchGroup;
   selectedEngineKey?: string;
   onEngineSelect: (engineKey: string) => void;
+  activeRootTitle?: string | null;
+  childCategories?: NormalizedCategory[];
+  activeChildId?: string | null;
+  onChildSelect?: (id: string | null) => void;
 };
 
 export const SearchPanel = ({
@@ -32,13 +37,23 @@ export const SearchPanel = ({
   selectedGroup,
   selectedEngineKey,
   onEngineSelect,
+  activeRootTitle,
+  childCategories,
+  activeChildId,
+  onChildSelect,
 }: SearchPanelProps) => (
-  <section className="space-y-4 rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-2xl">
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+  <section className="space-y-5 rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-5 py-6 shadow-2xl sm:px-6">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="space-y-1">
         <h2 className="text-xl font-semibold text-slate-900">智能搜索</h2>
         <p className="text-sm text-slate-500">选择搜索引擎或直接搜索站内资源。</p>
       </div>
+      {activeRootTitle ? (
+        <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-500">
+          <span className="inline-flex h-2 w-2 rounded-full" style={{ backgroundColor: accent }} />
+          当前分类：<span className="font-medium text-slate-700">{activeRootTitle}</span>
+        </div>
+      ) : null}
     </div>
 
     <form onSubmit={onSubmit} className="space-y-4">
@@ -49,14 +64,14 @@ export const SearchPanel = ({
         accent={accent}
       />
 
-      {selectedGroup && selectedGroup.engines.length > 1 && (
+      {selectedGroup && selectedGroup.engines.length > 1 ? (
         <EngineSelector
           group={selectedGroup}
           selectedKey={selectedEngineKey}
           onSelect={onEngineSelect}
           accent={accent}
         />
-      )}
+      ) : null}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
@@ -65,15 +80,13 @@ export const SearchPanel = ({
             value={searchInput}
             onChange={event => onSearchInputChange(event.target.value)}
             onKeyDown={event => {
-              if (event.key === "Escape") {
-                onSearchClear();
-              }
+              if (event.key === "Escape") onSearchClear();
             }}
             placeholder="输入关键词，搜索导航内容"
             className="w-full rounded-2xl border border-slate-200/80 bg-white px-5 py-3 text-sm text-slate-700 shadow-inner focus:border-[color:var(--theme-accent)] focus:outline-none"
             style={{ ['--theme-accent' as any]: accent }}
           />
-          {searchInput && (
+          {searchInput ? (
             <button
               type="button"
               onClick={onSearchClear}
@@ -82,7 +95,7 @@ export const SearchPanel = ({
             >
               清除
             </button>
-          )}
+          ) : null}
         </div>
         <button
           type="submit"
@@ -93,11 +106,23 @@ export const SearchPanel = ({
         </button>
       </div>
 
-      {searchKeyword && (
+      {searchKeyword ? (
         <p className="text-xs text-slate-400">
           共找到 {resultCount} 条与 “{searchKeyword}” 相关的站点。
         </p>
-      )}
+      ) : null}
+
+      {Array.isArray(childCategories) && childCategories.length > 0 && onChildSelect ? (
+        <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3">
+          <div className="mb-2 text-xs font-medium uppercase tracking-[0.3em] text-slate-400">子分类快捷筛选</div>
+          <CategoryFilterChips
+            categories={childCategories}
+            activeId={activeChildId ?? null}
+            onSelect={onChildSelect}
+            accent={accent}
+          />
+        </div>
+      ) : null}
     </form>
   </section>
 );
@@ -110,7 +135,7 @@ type SearchEngineTabsProps = {
 };
 
 const SearchEngineTabs = ({ groups, selectedGroupId, onSelect, accent }: SearchEngineTabsProps) => (
-  <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
+  <div className="flex flex-wrap gap-2">
     {groups.map(group => {
       const active = group.id === selectedGroupId;
       return (
@@ -118,14 +143,17 @@ const SearchEngineTabs = ({ groups, selectedGroupId, onSelect, accent }: SearchE
           key={group.id}
           type="button"
           onClick={() => onSelect(group.id)}
-          className={`rounded-full border px-3 py-1 transition ${
+          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold shadow-sm transition ${
             active
-              ? "border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)]/20 text-[color:var(--theme-accent)]"
-              : "border-transparent bg-slate-100 text-slate-500 hover:border-[color:var(--theme-accent)]/40 hover:text-[color:var(--theme-accent)]"
+              ? "border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)]/15 text-[color:var(--theme-accent)]"
+              : "border-slate-200 bg-white text-slate-500 hover:border-[color:var(--theme-accent)]/50 hover:bg-[color:var(--theme-accent)]/10 hover:text-[color:var(--theme-accent)]"
           }`}
           style={{ ['--theme-accent' as any]: accent }}
         >
           {group.name}
+          {active ? (
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--theme-accent)]" />
+          ) : null}
         </button>
       );
     })}
