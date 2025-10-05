@@ -1,4 +1,14 @@
 <div align="center">
+  <strong>
+    <a href="#navgo-中文版">中文</a>
+    <span style="display:inline-block;padding:0 12px;color:#cbd5f5;">｜</span>
+    <a href="#navgo-english-version">English</a>
+  </strong>
+</div>
+
+<br />
+
+<div align="center">
 
 # NavGo 导航系统 · NavGo Navigation Hub
 
@@ -16,19 +26,14 @@
 
 </div>
 
-<div align="right">
-  <a href="#navgo-中文版">中文</a> ｜ <a href="#navgo-english-version">English</a>
-</div>
+---
 
-<details open>
-<summary id="navgo-中文版">🇨🇳 NavGo 中文版</summary>
+## 🇨🇳 NavGo 中文版 {#navgo-中文版}
 
 ### 📌 项目简介
-
 NavGo 是一款面向团队与创作者的导航管理平台，内置多套主题、后台模块与搜索配置，帮助你快速搭建风格统一、层次清晰的导航站点。
 
 ### ✨ 核心特性
-
 - 🎯 **分级目录**：支持一、二级分类，自动聚合展示，提升资源可达性。
 - 🔍 **智能搜索**：结合站内检索与外部搜索引擎切换，一键跳转。
 - 🎨 **主题定制**：多套主题模板与配色变量，轻松匹配品牌视觉。
@@ -36,7 +41,6 @@ NavGo 是一款面向团队与创作者的导航管理平台，内置多套主�
 - 🧭 **体验统一**：前后台保持中文文案风格，界面细节精致统一。
 
 ### 🚀 快速上手
-
 1. **环境准备**：Node.js ≥ 18、npm（或 pnpm / yarn）、MongoDB 实例。
 2. **克隆安装**：
    ```bash
@@ -81,7 +85,7 @@ nav_go/
 | `NEXTAUTH_URL` | NextAuth 对外可访问地址 |
 | `JWT_SECRET` | 自定义 JWT 加密密钥 |
 
-可视业务需要追加 `SITE_URL`、`EMAIL_FROM` 等部署相关变量。
+建议视业务需要追加 `SITE_URL`、`EMAIL_FROM` 等部署相关变量。
 
 ### 📦 常用命令
 
@@ -102,20 +106,16 @@ nav_go/
 4. 提交 PR 时附上改动说明与必要截图或验证结果。
 
 ### 📄 许可证
-
 本项目基于 [MIT License](LICENSE) 开源，可用于个人或商业项目，使用时请保留版权信息。
 
-</details>
+---
 
-<details>
-<summary id="navgo-english-version">🇺🇸 NavGo English Version</summary>
+## 🇺🇸 NavGo English Version {#navgo-english-version}
 
 ### 📌 Overview
-
 NavGo is a modern navigation platform crafted for teams and curators. It bundles elegant front-end themes, a comprehensive admin console, and configurable search routing so you can launch a polished link hub in minutes.
 
 ### ✨ Highlights
-
 - 🎯 **Hierarchical Categories**: Support for root and child groups with automatic aggregation.
 - 🔍 **Smart Search**: Seamless switch between in-site results and external search engines.
 - 🎨 **Theme Customisation**: Multiple ready-to-use themes with adjustable colour palettes.
@@ -123,7 +123,6 @@ NavGo is a modern navigation platform crafted for teams and curators. It bundles
 - 🧭 **Consistent UX**: Chinese-first copy with a refined, translation-ready interface.
 
 ### 🚀 Getting Started
-
 1. **Prerequisites**: Node.js ≥ 18, npm (or pnpm / yarn), and a MongoDB instance.
 2. **Clone & Install**:
    ```bash
@@ -156,7 +155,7 @@ nav_go/
 ├─ scripts/      # Init & migration helpers
 ├─ img/          # Preview assets
 ├─ lib/          # Shared utilities & DB helpers
-└─ …             # Misc configuration
+└─ …            # Misc configuration
 ```
 
 ### ⚙️ Environment Variables
@@ -189,10 +188,9 @@ Additional variables like `SITE_URL` or `EMAIL_FROM` are recommended in producti
 4. Submit a PR with concise notes, screenshots, or test evidence.
 
 ### 📄 License
-
 Released under the [MIT License](LICENSE). You’re free to fork, modify, and deploy—just keep the license notice intact.
 
-</details>
+---
 
 <div align="center">
 
