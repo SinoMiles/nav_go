@@ -5,6 +5,7 @@ export interface ThemeConfig {
   backgroundColor?: string;
   friendLinks?: Array<{ title: string; url: string }>;
   defaultDarkMode?: boolean;
+  headerTagline?: string;
 }
 
 export interface ThemeSettings {

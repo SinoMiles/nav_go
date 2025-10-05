@@ -24,6 +24,10 @@ export default async function HomePage() {
     // 获取站点设置
     const settings = await Settings.findOne({});
     const siteName = settings?.siteName || 'NavGo';
+    const enhancedThemeConfig = {
+      ...themeConfig,
+      headerTagline: settings?.headerTagline || (themeConfig as any)?.headerTagline,
+    };
 
     // 获取分类和链接
     const categories = await Category.find({ enabled: true })
@@ -49,7 +53,7 @@ export default async function HomePage() {
       <ThemeComponent
         categories={categoriesData}
         links={linksData}
-        config={themeConfig}
+        config={enhancedThemeConfig}
         siteName={siteName}
       >
         {null}

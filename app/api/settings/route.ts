@@ -42,6 +42,7 @@ export async function PUT(req: NextRequest) {
         siteKeywords,
         logo,
         favicon,
+        headerTagline,
       } = body;
 
       let settings = await Settings.findOne({});
@@ -55,6 +56,7 @@ export async function PUT(req: NextRequest) {
       if (siteKeywords !== undefined) settings.siteKeywords = siteKeywords;
       if (logo !== undefined) settings.logo = logo;
       if (favicon !== undefined) settings.favicon = favicon;
+      if (headerTagline !== undefined) settings.headerTagline = headerTagline;
 
       await settings.save();
 

@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Long Cang";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/LongCang.ttf") format("truetype");
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --tagline-font: "Long Cang", "LongCang", "Noto Serif SC", "Times New Roman", serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -16,6 +25,11 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.tagline-type {
+  font-family: var(--tagline-font);
+  font-weight: 400;
 }
 
 * {

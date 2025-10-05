@@ -1,11 +1,21 @@
 type MobileHeaderProps = {
   siteName?: string | null;
   accent: string;
+  tagline?: string | null;
   onOpenMenu: () => void;
   onOpenSubmit: () => void;
 };
 
-export const MobileHeader = ({ siteName, accent, onOpenMenu, onOpenSubmit }: MobileHeaderProps) => (
+const resolveTagline = (tagline?: string | null) => {
+  if (!tagline) return "";
+  const trimmed = tagline.trim();
+  return trimmed.length > 0 ? trimmed : "";
+};
+
+export const MobileHeader = ({ siteName, accent, tagline, onOpenMenu, onOpenSubmit }: MobileHeaderProps) => {
+  const displayTagline = resolveTagline(tagline);
+
+  return (
   <header className="sticky top-0 z-30 flex items-center justify-between rounded-3xl border border-white/10 bg-[color:var(--theme-surface)]/90 px-5 py-4 shadow-lg backdrop-blur lg:hidden">
     <button
       type="button"
@@ -15,9 +25,12 @@ export const MobileHeader = ({ siteName, accent, onOpenMenu, onOpenSubmit }: Mob
       <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ backgroundColor: accent }} />
       分类导航
     </button>
-    <div className="text-center">
+    <div className="flex flex-col items-center text-center">
       <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">NavGo</p>
       <h1 className="text-base font-semibold text-slate-900">{siteName || 'NavGo'}</h1>
+      {displayTagline ? (
+        <p className="mt-1 text-sm text-slate-500 tagline-type">{displayTagline}</p>
+      ) : null}
     </div>
     <button
       type="button"
@@ -28,4 +41,5 @@ export const MobileHeader = ({ siteName, accent, onOpenMenu, onOpenSubmit }: Mob
       投稿
     </button>
   </header>
-);
+  );
+};

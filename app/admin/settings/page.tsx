@@ -9,6 +9,7 @@ interface SettingsState {
   siteKeywords: string;
   logo: string;
   favicon: string;
+  headerTagline: string;
 }
 
 const INITIAL_STATE: SettingsState = {
@@ -17,6 +18,7 @@ const INITIAL_STATE: SettingsState = {
   siteKeywords: '',
   logo: '',
   favicon: '',
+  headerTagline: '',
 };
 
 export default function SettingsPage() {
@@ -46,6 +48,7 @@ export default function SettingsPage() {
           siteKeywords: data.settings.siteKeywords || '',
           logo: data.settings.logo || '',
           favicon: data.settings.favicon || '',
+          headerTagline: data.settings.headerTagline || '',
         });
       }
     } catch (error) {
@@ -143,6 +146,17 @@ export default function SettingsPage() {
                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
                 placeholder="示例：导航, 工具, 资源"
               />
+            </label>
+            <label className="space-y-2 text-sm md:col-span-2">
+              <span className="font-medium text-slate-200">头部标语</span>
+              <input
+                type="text"
+                value={settings.headerTagline}
+                onChange={event => setSettings(prev => ({ ...prev, headerTagline: event.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
+                placeholder="例如：优雅 永不过时..."
+              />
+              <p className="text-xs text-slate-400/90">此文案将用于前台左侧标语，并带有打字动画效果。</p>
             </label>
           </div>
 

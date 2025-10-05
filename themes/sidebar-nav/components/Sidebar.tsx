@@ -39,13 +39,13 @@ export const Sidebar = ({
   useEffect(() => {
     const caretTimer = setInterval(() => {
       setCaretVisible(prev => !prev);
-    }, 650);
+    }, 700);
     return () => clearInterval(caretTimer);
   }, []);
 
   useEffect(() => {
     if (pause) {
-      const pauseTimer = setTimeout(() => setPause(false), isDeleting ? 420 : 1100);
+      const pauseTimer = setTimeout(() => setPause(false), isDeleting ? 520 : 1500);
       return () => clearTimeout(pauseTimer);
     }
 
@@ -68,7 +68,7 @@ export const Sidebar = ({
         }
         return next;
       });
-    }, isDeleting ? 70 : 120);
+    }, isDeleting ? 110 : 180);
 
     return () => clearTimeout(typingTimer);
   }, [displayTagline, isDeleting, pause, typedText]);
@@ -84,12 +84,12 @@ export const Sidebar = ({
         <div className="space-y-3">
           <h1 className="text-2xl font-semibold text-slate-900">{siteName || "NavGo"}</h1>
           <div
-            className="min-h-[2.75rem] text-[30px] leading-tight tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-slate-700 to-[color:var(--theme-accent)]"
-            style={{ ['--theme-accent' as any]: accent, fontFamily: '"Playfair Display", "Times New Roman", serif' }}
+            className="min-h-[2.8rem] text-[30px] leading-tight tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-slate-300 via-slate-600 to-[color:var(--theme-accent)] tagline-type"
+            style={{ ['--theme-accent' as any]: accent }}
           >
             <span className="whitespace-pre">{typedText}</span>
             <span
-              className={`ml-1 inline-block h-7 w-[2px] bg-[color:var(--theme-accent)] transition-opacity duration-300 ${caretVisible ? "opacity-90" : "opacity-20"}`}
+              className={`ml-1 inline-block h-7 w-[2px] bg-[color:var(--theme-accent)] transition-opacity duration-300 ${caretVisible ? "opacity-90" : "opacity-15"}`}
               style={{ ['--theme-accent' as any]: accent }}
             />
           </div>

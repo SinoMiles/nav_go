@@ -46,6 +46,13 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
   const surface = config?.contentColor || "#ffffff";
   const background = config?.backgroundColor || "#f8fafc";
   const headerTagline = typeof (config as any)?.headerTagline === "string" ? (config as any).headerTagline : null;
+  const resolvedTagline = useMemo(() => {
+    if (typeof headerTagline === "string") {
+      const trimmed = headerTagline.trim();
+      if (trimmed.length > 0) return trimmed;
+    }
+    return "优雅 永不过时...";
+  }, [headerTagline]);
 
   const themeVars = useMemo(
     () =>
@@ -250,6 +257,7 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
           <MobileHeader
             siteName={siteName}
             accent={accent}
+            tagline={resolvedTagline}
             onOpenMenu={openMobileMenu}
             onOpenSubmit={openSubmitModal}
           />
@@ -262,7 +270,7 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
               activeRoot={activeRoot}
               onRootSelect={handleRootSelect}
               footerOffset={sidebarOffset}
-              tagline={headerTagline}
+              tagline={resolvedTagline}
             />
 
             <main className="space-y-6 sm:space-y-8 lg:space-y-10">
@@ -281,9 +289,6 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
                 selectedEngineKey={selectedEngineKey}
                 onEngineSelect={handleEngineSelect}
                 activeRootTitle={activeRootSection?.root.title ?? null}
-                childCategories={activeRootSection?.childCategories}
-                activeChildId={activeChild}
-                onChildSelect={handleChildSelect}
               />
 
               {searchKeyword ? (
