@@ -21,7 +21,10 @@
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 <p align="center">
-  <img src="img/priview.png" alt="NavGo 预览图 / NavGo Preview" width="900" />
+  <img src="img/navgo-preview-desktop.png" alt="NavGo 桌面端预览 / NavGo Desktop Preview" width="900" />
+</p>
+<p align="center">
+  <img src="img/navgo-preview-mobile.jpg" alt="NavGo 移动端预览 / NavGo Mobile Preview" width="360" />
 </p>
 
 </div>
