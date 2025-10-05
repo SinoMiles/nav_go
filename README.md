@@ -1,8 +1,8 @@
 <div align="center">
   <strong>
-    <a href="#navgo-中文版">中文</a>
-    <span style="display:inline-block;padding:0 12px;color:#cbd5f5;">｜</span>
-    <a href="#navgo-english-version">English</a>
+    <a href="#navgo-cn">中文</a>
+    <span style="display:inline-block;padding:0 12px;color:#cbd5f5;">·</span>
+    <a href="#navgo-en">English</a>
   </strong>
 </div>
 
@@ -31,7 +31,7 @@
 
 ---
 
-## 🇨🇳 NavGo 中文版 {#navgo-中文版}
+## 🇨🇳 NavGo 中文版 {#navgo-cn}
 
 ### 📌 项目简介
 NavGo 是一款面向团队与创作者的导航管理平台，内置多套主题、后台模块与搜索配置，帮助你快速搭建风格统一、层次清晰的导航站点。
@@ -113,7 +113,7 @@ nav_go/
 
 ---
 
-## 🇺🇸 NavGo English Version {#navgo-english-version}
+## 🇺🇸 NavGo English Version {#navgo-en}
 
 ### 📌 Overview
 NavGo is a modern navigation platform crafted for teams and curators. It bundles elegant front-end themes, a comprehensive admin console, and configurable search routing so you can launch a polished link hub in minutes.
