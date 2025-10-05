@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 
 const themesDir = path.join(__dirname, '..', 'themes');
 
-// 主题1: 现代卡片网格 (modern-grid)
+// 涓婚1: 鐜颁唬鍗＄墖缃戞牸 (modern-grid)
 const modernGridTheme = `import React from 'react';
 import { ThemeProps } from '@/lib/types/theme';
 
@@ -18,7 +18,7 @@ export default function ModernGridTheme({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* 顶部导航 */}
+      {/* 椤堕儴瀵艰埅 */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -30,20 +30,20 @@ export default function ModernGridTheme({
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   {siteName}
                 </h1>
-                <p className="text-sm text-gray-500">发现优质网站资源</p>
+                <p className="text-sm text-gray-500">鍙戠幇浼樿川缃戠珯璧勬簮</p>
               </div>
             </div>
             <nav className="flex gap-6">
-              <a href="/" className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">首页</a>
+              <a href="/" className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">棣栭〉</a>
               <a href="/admin" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">
-                管理后台
+                绠＄悊鍚庡彴
               </a>
             </nav>
           </div>
         </div>
       </header>
 
-      {/* 主内容 */}
+      {/* 涓诲唴瀹?*/}
       <main className="max-w-7xl mx-auto px-6 py-12">
         {children || (
           <div className="space-y-16">
@@ -64,8 +64,7 @@ export default function ModernGridTheme({
                       )}
                     </div>
                     <span className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold">
-                      {categoryLinks.length} 个网站
-                    </span>
+                      {categoryLinks.length} 涓綉绔?                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -118,10 +117,10 @@ export default function ModernGridTheme({
         )}
       </main>
 
-      {/* 页脚 */}
+      {/* 椤佃剼 */}
       <footer className="bg-white border-t border-gray-200 mt-20">
         <div className="max-w-7xl mx-auto px-6 py-8 text-center">
-          <p className="text-gray-600">© 2024 {siteName}. Powered by NavCraft.</p>
+          <p className="text-gray-600">漏 2024 {siteName}. Powered by NavGo.</p>
         </div>
       </footer>
     </div>
@@ -129,7 +128,7 @@ export default function ModernGridTheme({
 }
 `;
 
-// 主题2: 极简列表 (minimalist-list)
+// 涓婚2: 鏋佺畝鍒楄〃 (minimalist-list)
 const minimalistListTheme = `import React from 'react';
 import { ThemeProps } from '@/lib/types/theme';
 
@@ -142,15 +141,15 @@ export default function MinimalistListTheme({
 }: ThemeProps) {
   return (
     <div className="min-h-screen bg-white">
-      {/* 顶部 */}
+      {/* 椤堕儴 */}
       <header className="border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-6 py-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">{siteName}</h1>
-          <p className="text-gray-600">精选网站导航集合</p>
+          <p className="text-gray-600">绮鹃€夌綉绔欏鑸泦鍚?/p>
         </div>
       </header>
 
-      {/* 主内容 */}
+      {/* 涓诲唴瀹?*/}
       <main className="max-w-5xl mx-auto px-6 py-12">
         {children || (
           <div className="space-y-12">
@@ -199,10 +198,10 @@ export default function MinimalistListTheme({
         )}
       </main>
 
-      {/* 页脚 */}
+      {/* 椤佃剼 */}
       <footer className="border-t border-gray-200 mt-20">
         <div className="max-w-5xl mx-auto px-6 py-6 text-center text-sm text-gray-600">
-          © 2024 {siteName}
+          漏 2024 {siteName}
         </div>
       </footer>
     </div>
@@ -210,54 +209,55 @@ export default function MinimalistListTheme({
 }
 `;
 
-// 创建主题目录和文件的函数
+// 鍒涘缓涓婚鐩綍鍜屾枃浠剁殑鍑芥暟
 function createTheme(themeName, themeCode, settings) {
   const themeDir = path.join(themesDir, themeName);
 
-  // 创建目录
+  // 鍒涘缓鐩綍
   if (!fs.existsSync(themeDir)) {
     fs.mkdirSync(themeDir, { recursive: true });
   }
 
-  // 写入index.tsx
+  // 鍐欏叆index.tsx
   fs.writeFileSync(path.join(themeDir, 'index.tsx'), themeCode);
 
-  // 写入settings.json
+  // 鍐欏叆settings.json
   fs.writeFileSync(
     path.join(themeDir, 'settings.json'),
     JSON.stringify(settings, null, 2)
   );
 
-  console.log(`✅ 创建主题: ${themeName}`);
+  console.log(`鉁?鍒涘缓涓婚: ${themeName}`);
 }
 
-console.log('🎨 开始创建主题...\n');
+console.log('馃帹 寮€濮嬪垱寤轰富棰?..\n');
 
-// 创建主题1
+// 鍒涘缓涓婚1
 createTheme('modern-grid', modernGridTheme, {
   name: 'modern-grid',
-  title: '现代卡片网格',
-  description: '时尚的卡片网格布局，适合展示大量网站',
+  title: '鐜颁唬鍗＄墖缃戞牸',
+  description: '鏃跺皻鐨勫崱鐗囩綉鏍煎竷灞€锛岄€傚悎灞曠ず澶ч噺缃戠珯',
   version: '1.0.0',
-  author: 'NavCraft',
+  author: 'NavGo',
   configSchema: {
     primaryColor: {
       type: 'color',
-      label: '主色调',
+      label: '涓昏壊璋?,
       default: '#6366f1'
     }
   }
 });
 
-// 创建主题2
+// 鍒涘缓涓婚2
 createTheme('minimalist-list', minimalistListTheme, {
   name: 'minimalist-list',
-  title: '极简列表',
-  description: '简洁的列表布局，注重内容和可读性',
+  title: '鏋佺畝鍒楄〃',
+  description: '绠€娲佺殑鍒楄〃甯冨眬锛屾敞閲嶅唴瀹瑰拰鍙鎬?,
   version: '1.0.0',
-  author: 'NavCraft',
+  author: 'NavGo',
   configSchema: {}
 });
 
-console.log('\n🎉 主题创建完成！');
-console.log('💡 运行 node scripts/install-themes.js 来安装这些主题到数据库');
+console.log('\n馃帀 涓婚鍒涘缓瀹屾垚锛?);
+console.log('馃挕 杩愯 node scripts/install-themes.js 鏉ュ畨瑁呰繖浜涗富棰樺埌鏁版嵁搴?);
+

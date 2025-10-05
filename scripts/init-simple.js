@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const MONGODB_URI = 'mongodb://NavCraft:3afnijdxHaMrJHsT@39.98.161.189:27017/navcraft';
+const MONGODB_URI = 'mongodb://NavGo:3afnijdxHaMrJHsT@39.98.161.189:27017/NavGo';
 
-// 用户Schema
+// 鐢ㄦ埛Schema
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -13,7 +13,7 @@ const UserSchema = new mongoose.Schema({
   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'LinkItem' }],
 }, { timestamps: true });
 
-// 主题Schema
+// 涓婚Schema
 const ThemeSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
   title: { type: String, required: true },
@@ -25,10 +25,10 @@ const ThemeSchema = new mongoose.Schema({
   configSchema: mongoose.Schema.Types.Mixed,
 }, { timestamps: true });
 
-// 设置Schema
+// 璁剧疆Schema
 const SettingsSchema = new mongoose.Schema({
   activeTheme: { type: String, default: 'default' },
-  siteName: { type: String, default: 'NavCraft' },
+  siteName: { type: String, default: 'NavGo' },
   siteDescription: String,
   siteKeywords: String,
   logo: String,
@@ -42,12 +42,11 @@ const Settings = mongoose.model('Settings', SettingsSchema);
 
 async function init() {
   try {
-    console.log('🔗 连接数据库...');
+    console.log('馃敆 杩炴帴鏁版嵁搴?..');
     await mongoose.connect(MONGODB_URI);
-    console.log('✅ 数据库连接成功');
+    console.log('鉁?鏁版嵁搴撹繛鎺ユ垚鍔?);
 
-    // 创建默认管理员账号
-    const adminEmail = 'admin@navcraft.com';
+    // 鍒涘缓榛樿绠＄悊鍛樿处鍙?    const adminEmail = 'admin@NavGo.com';
     const existingAdmin = await User.findOne({ email: adminEmail });
 
     if (!existingAdmin) {
@@ -58,78 +57,78 @@ async function init() {
         name: 'Administrator',
         role: 'admin',
       });
-      console.log('✅ 默认管理员账号已创建');
-      console.log('   邮箱: admin@navcraft.com');
-      console.log('   密码: admin');
+      console.log('鉁?榛樿绠＄悊鍛樿处鍙峰凡鍒涘缓');
+      console.log('   閭: admin@NavGo.com');
+      console.log('   瀵嗙爜: admin');
     } else {
-      console.log('ℹ️  管理员账号已存在');
+      console.log('鈩癸笍  绠＄悊鍛樿处鍙峰凡瀛樺湪');
     }
 
-    // 安装默认主题
+    // 瀹夎榛樿涓婚
     const defaultTheme = await Theme.findOne({ name: 'default' });
     if (!defaultTheme) {
       await Theme.create({
         name: 'default',
-        title: '默认主题',
-        description: '简洁优雅的默认导航主题',
+        title: '榛樿涓婚',
+        description: '绠€娲佷紭闆呯殑榛樿瀵艰埅涓婚',
         version: '1.0.0',
-        author: 'NavCraft',
+        author: 'NavGo',
         installed: true,
         enabled: false,
       });
-      console.log('✅ 默认主题已安装');
+      console.log('鉁?榛樿涓婚宸插畨瑁?);
     } else {
-      console.log('ℹ️  默认主题已存在');
+      console.log('鈩癸笍  榛樿涓婚宸插瓨鍦?);
     }
 
-    // 安装现代主题
+    // 瀹夎鐜颁唬涓婚
     const modernTheme = await Theme.findOne({ name: 'modern' });
     if (!modernTheme) {
       await Theme.create({
         name: 'modern',
-        title: '现代主题',
-        description: '现代简约风格的导航主题',
+        title: '鐜颁唬涓婚',
+        description: '鐜颁唬绠€绾﹂鏍肩殑瀵艰埅涓婚',
         version: '1.0.0',
-        author: 'NavCraft',
+        author: 'NavGo',
         installed: true,
         enabled: false,
       });
-      console.log('✅ 现代主题已安装');
+      console.log('鉁?鐜颁唬涓婚宸插畨瑁?);
     } else {
-      console.log('ℹ️  现代主题已存在');
+      console.log('鈩癸笍  鐜颁唬涓婚宸插瓨鍦?);
     }
 
-    // 初始化设置
-    const existingSettings = await Settings.findOne({});
+    // 鍒濆鍖栬缃?    const existingSettings = await Settings.findOne({});
     if (!existingSettings) {
       await Settings.create({
         activeTheme: 'default',
-        siteName: 'NavCraft',
-        siteDescription: '基于Next.js的可切换主题导航系统',
+        siteName: 'NavGo',
+        siteDescription: '鍩轰簬Next.js鐨勫彲鍒囨崲涓婚瀵艰埅绯荤粺',
         themeConfigs: {},
       });
-      console.log('✅ 默认设置已创建');
+      console.log('鉁?榛樿璁剧疆宸插垱寤?);
     } else {
-      console.log('ℹ️  设置已存在');
+      console.log('鈩癸笍  璁剧疆宸插瓨鍦?);
     }
 
     console.log('');
-    console.log('🎉 数据库初始化完成！');
+    console.log('馃帀 鏁版嵁搴撳垵濮嬪寲瀹屾垚锛?);
     console.log('');
-    console.log('📝 管理员登录信息:');
-    console.log('   登录地址: http://localhost:3001/admin/login');
-    console.log('   邮箱: admin@navcraft.com');
-    console.log('   密码: admin');
+    console.log('馃摑 绠＄悊鍛樼櫥褰曚俊鎭?');
+    console.log('   鐧诲綍鍦板潃: http://localhost:3001/admin/login');
+    console.log('   閭: admin@NavGo.com');
+    console.log('   瀵嗙爜: admin');
     console.log('');
-    console.log('💡 登录后请在后台添加分类和链接，然后切换主题查看效果');
+    console.log('馃挕 鐧诲綍鍚庤鍦ㄥ悗鍙版坊鍔犲垎绫诲拰閾炬帴锛岀劧鍚庡垏鎹富棰樻煡鐪嬫晥鏋?);
     console.log('');
 
     await mongoose.disconnect();
     process.exit(0);
   } catch (error) {
-    console.error('❌ 初始化失败:', error);
+    console.error('鉂?鍒濆鍖栧け璐?', error);
     process.exit(1);
   }
 }
 
 init();
+

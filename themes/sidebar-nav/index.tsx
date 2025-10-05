@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import AddLinkModal from "@/themes/shared/AddLinkModal";
 import type { ThemeProps } from "@/lib/types/theme";
@@ -238,10 +238,13 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
 
   const [showSubmit, setShowSubmit] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [sidebarFloating, setSidebarFloating] = useState(true);
 
   const accent = config?.primaryColor || "#eb247a";
   const surface = config?.contentColor || "#ffffff";
   const background = config?.backgroundColor || "#f8fafc";
+
+  const footerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -302,6 +305,23 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const footerNode = footerRef.current;
+    if (!footerNode) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const [entry] = entries;
+        setSidebarFloating(!entry.isIntersecting);
+      },
+      { rootMargin: "120px 0px 0px 0px" }
+    );
+
+    observer.observe(footerNode);
+
+    return () => observer.disconnect();
   }, []);
 
   const selectedGroup = useMemo(
@@ -440,7 +460,11 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
   return (
     <div className="min-h-screen bg-[color:var(--theme-background)] text-slate-800" style={themeVars}>
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:px-10">
-        <aside className="hidden lg:sticky lg:top-10 lg:flex lg:h-max lg:flex-col lg:gap-6">
+        <aside
+          className={`hidden lg:flex lg:h-max lg:flex-col lg:gap-6 ${
+            sidebarFloating ? "lg:sticky lg:top-10" : "lg:relative"
+          }`}
+        >
           <div className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl">
             <div className="flex items-center gap-3">
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[color:var(--theme-accent)] text-lg font-semibold text-white">
@@ -705,7 +729,10 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
           )}
         </main>
 
-        <footer className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl lg:col-span-2">
+        <footer
+          ref={footerRef}
+          className="rounded-3xl border border-slate-200/80 bg-[color:var(--theme-surface)] px-6 py-6 shadow-xl lg:col-span-2"
+        >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-slate-900">{siteName || "导航站"} · 精选资源</h3>
