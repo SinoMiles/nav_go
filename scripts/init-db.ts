@@ -3,13 +3,13 @@ import path from 'path';
 import { Types } from 'mongoose';
 
 const envPath = path.join(process.cwd(), '.env.local');
-console.log('加载环境变量文件:', envPath);
+console.log('Loading env file:', envPath);
 const result = config({ path: envPath });
 if (result.error) {
-  console.error('加载环境变量失败:', result.error);
+  console.error('Failed to load env file:', result.error);
 } else {
-  console.log('环境变量加载成功');
-  console.log('MONGODB_URI:', process.env.MONGODB_URI ? '已设定' : '未设定');
+  console.log('Environment variables loaded');
+  console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'configured' : 'not set');
 }
 
 import connectDB from '../lib/mongodb';
@@ -18,75 +18,13 @@ import Settings from '../models/Settings';
 import Category from '../models/Category';
 import LinkItem from '../models/LinkItem';
 import { SAMPLE_CATEGORY_TREE } from '../lib/sample-data';
-
-const ALLOWED_THEMES = ['fullscreen-section', 'sidebar-nav'] as const;
-type AllowedTheme = (typeof ALLOWED_THEMES)[number];
-
-const fullscreenSectionTheme = {
-  name: 'fullscreen-section',
-  title: '全屏分屏',
-  description: '全屏分屏展示，支持左右切换和自动播放，适合演示和展示场景',
-  version: '1.0.0',
-  author: 'NavGo',
-  previewUrl: '/themes/fullscreen-section/preview.png',
-  installed: true,
-  enabled: false,
-  configSchema: {},
-};
-
-const sidebarNavTheme = {
-  name: 'sidebar-nav',
-  title: '侧边栏导航',
-  description:
-    '集成搜索、收藏、评分、热门推荐、夜间模式等高级功能的完整导航系统',
-  version: '2.0.0',
-  author: 'NavGo Team',
-  previewUrl: '/themes/sidebar-nav/preview.png',
-  installed: true,
-  enabled: false,
-  configSchema: {
-    primaryColor: {
-      type: 'color',
-      label: '主色调',
-      default: '#2563eb',
-    },
-    surfaceEmphasis: {
-      type: 'color',
-      label: '内容背景色',
-      default: '#f8fafc',
-    },
-    borderMuted: {
-      type: 'color',
-      label: '边框辅助色',
-      default: '#e2e8f0',
-    },
-    textSecondary: {
-      type: 'color',
-      label: '次要文字色',
-      default: '#64748b',
-    },
-    outlineFocus: {
-      type: 'color',
-      label: '焦点高亮色',
-      default: '#2563eb',
-    },
-    gradientStart: {
-      type: 'color',
-      label: '渐变起始色',
-      default: '#ffffff',
-    },
-    gradientEnd: {
-      type: 'color',
-      label: '渐变结束色',
-      default: '#e2e8f0',
-    },
-  },
-};
+import { syncThemesWithFilesystem } from '../lib/theme';
+import { getAvailableThemeNames } from '../lib/theme-registry';
 
 async function seedSampleCategories() {
   const categoryCount = await Category.countDocuments();
   if (categoryCount > 0) {
-    console.log('ℹ️  检测到现有分类，跳过示例分类创建');
+    console.log('ℹ️  Existing categories detected, skipping seed data');
     return;
   }
 
@@ -137,68 +75,63 @@ async function seedSampleCategories() {
     }
   }
 
-  console.log('✅ 已创建示例的多级分类与链接');
+  console.log('✅ Seeded sample categories and links');
 }
 
 async function initDatabase() {
   try {
-    console.log('🔗  连接数据库...');
+    console.log('🔗  Connecting to database...');
     await connectDB();
 
-    console.log('📦  清理并检查主题...');
-    await Theme.deleteMany({ name: { $nin: ALLOWED_THEMES } });
+    console.log('🧹  Syncing themes with filesystem...');
+    await syncThemesWithFilesystem();
+    const availableNames = getAvailableThemeNames();
 
-    for (const themeData of [fullscreenSectionTheme, sidebarNavTheme]) {
-      const existing = await Theme.findOne({ name: themeData.name });
-      if (!existing) {
-        await Theme.create(themeData);
-        console.log(`✅ ${themeData.title} 已安装`);
-      } else {
-        Object.assign(existing, themeData);
-        await existing.save();
-        console.log(`ℹ️  ${themeData.title} 已同步`);
-      }
-    }
-
-    console.log('⚙️  检查站点设置...');
+    console.log('⚙️  Checking site settings...');
     const existingSettings = await Settings.findOne({});
 
     if (!existingSettings) {
+      const initialTheme = availableNames.includes('fullscreen-section')
+        ? 'fullscreen-section'
+        : availableNames[0] ?? 'fullscreen-section';
+
       await Settings.create({
-        activeTheme: 'fullscreen-section',
+        activeTheme: initialTheme,
         siteName: 'NavGo',
-        siteDescription: '基于 Next.js 的可切换主题导航系统',
+        siteDescription: 'Navigation system powered by Next.js',
         themeConfigs: {},
       });
-      console.log('✅ 默认设置已创建');
+      console.log('✅ Created default settings');
     } else {
       const sanitizedConfigs = Object.fromEntries(
         Object.entries(existingSettings.themeConfigs || {}).filter(([key]) =>
-          ALLOWED_THEMES.includes(key as AllowedTheme)
-        )
+          availableNames.includes(key)
+        ),
       );
 
-      const activeTheme = existingSettings.activeTheme as AllowedTheme;
-      existingSettings.activeTheme = ALLOWED_THEMES.includes(activeTheme)
+      const activeTheme = existingSettings.activeTheme;
+      existingSettings.activeTheme = availableNames.includes(activeTheme)
         ? activeTheme
-        : 'fullscreen-section';
+        : (availableNames.includes('fullscreen-section')
+            ? 'fullscreen-section'
+            : availableNames[0] ?? 'fullscreen-section');
       existingSettings.themeConfigs = sanitizedConfigs;
       await existingSettings.save();
-      console.log('ℹ️  设置已同步');
+      console.log('ℹ️  Settings synchronized');
     }
 
-    console.log('📂  检查分类与示例数据...');
+    console.log('📂  Checking categories and sample data...');
     await seedSampleCategories();
 
-    console.log('\n🎉 数据库初始化完成!');
-    console.log('📝 下一步:');
-    console.log('1. 访问 http://localhost:3000/admin/register 注册管理员账号');
-    console.log('2. 登录后台管理分类与链接');
-    console.log('3. 在主题管理中切换并预览主题');
+    console.log('\n🎉 Database initialization complete!');
+    console.log('📝 Next steps:');
+    console.log('1. Visit http://localhost:3000/admin/register to create an admin account');
+    console.log('2. Sign in to the admin panel to manage categories and links');
+    console.log('3. Use theme management to switch and preview themes');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ 初始化失败:', error);
+    console.error('Database initialization failed:', error);
     process.exit(1);
   }
 }

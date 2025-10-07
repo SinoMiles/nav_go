@@ -46,7 +46,6 @@ const CategorySchema = new Schema<ICategory>(
   }
 );
 
-CategorySchema.index({ slug: 1 });
 CategorySchema.index({ order: 1 });
 CategorySchema.index({ parentId: 1 });
 
@@ -55,3 +54,4 @@ const Category: Model<ICategory> =
   mongoose.model<ICategory>('Category', CategorySchema);
 
 export default Category;
+

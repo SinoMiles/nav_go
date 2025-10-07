@@ -1,26 +1,32 @@
-'use client';
+﻿"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 
 interface ThemeItem {
-  _id: string;
+  _id?: string;
   name: string;
   title: string;
   description?: string;
-  version: string;
+  version?: string;
   author?: string;
-  installed: boolean;
-  enabled: boolean;
+  previewUrl?: string;
+  installed?: boolean;
+  enabled?: boolean;
 }
 
-const ALLOWED_THEMES = new Set(['fullscreen-section', 'sidebar-nav']);
+const buildLoadingMap = (themes: ThemeItem[]): Record<string, boolean> => {
+  return themes.reduce<Record<string, boolean>>((acc, theme) => {
+    acc[theme.name] = true;
+    return acc;
+  }, {});
+};
 
 export default function ThemesPage() {
   const [themes, setThemes] = useState<ThemeItem[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
-  const [activeTheme, setActiveTheme] = useState('');
+  const [previewLoading, setPreviewLoading] = useState<Record<string, boolean>>({});
+  const [activeTheme, setActiveTheme] = useState("");
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [pending, setPending] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,31 +34,24 @@ export default function ThemesPage() {
   }, []);
 
   useEffect(() => {
-    if (themes.length > 0) {
-      void generatePreviewUrls();
-    }
-  }, [themes]);
-
-  useEffect(() => {
     if (!message) return;
-    const timer = setTimeout(() => setMessage(''), 3000);
+    const timer = setTimeout(() => setMessage(""), 3000);
     return () => clearTimeout(timer);
   }, [message]);
 
   const loadThemes = async () => {
     try {
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch('/api/themes', {
-        headers: { Authorization: `Bearer ${token}` },
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch("/api/themes", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       const data = await res.json();
-      const filtered = (data.themes || []).filter((theme: ThemeItem) =>
-        ALLOWED_THEMES.has(theme.name)
-      );
-      setThemes(filtered);
+      const list: ThemeItem[] = data.themes || [];
+      setThemes(list);
+      setPreviewLoading(buildLoadingMap(list));
     } catch (error) {
-      console.error('加载主题失败:', error);
-      setMessage('主题列表加载失败，请稍后重试。');
+      console.error("加载主题失败:", error);
+      setMessage("主题列表加载失败，请稍后重试。");
     } finally {
       setLoading(false);
     }
@@ -60,48 +59,27 @@ export default function ThemesPage() {
 
   const loadSettings = async () => {
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch("/api/settings");
       const data = await res.json();
-      setActiveTheme(data.settings?.activeTheme || '');
+      setActiveTheme(data.settings?.activeTheme || "");
     } catch (error) {
-      console.error('加载主题设置失败:', error);
+      console.error("加载主题设置失败:", error);
     }
   };
 
-  const generatePreviewUrls = async () => {
-    const token = localStorage.getItem('admin_token');
-    const urls: Record<string, string> = {};
-
-    for (const theme of themes) {
-      try {
-        const res = await fetch('/api/preview', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ theme: theme.name }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          urls[theme.name] = data.previewUrl;
-        }
-      } catch (error) {
-        console.error(`生成主题预览失败：${theme.name}`, error);
-      }
-    }
-
-    setPreviewUrls(urls);
+  const handlePreview = (themeName: string) => {
+    const previewUrl = `/preview?theme=${themeName}`;
+    window.open(previewUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleActivate = async (themeName: string) => {
     try {
       setPending(themeName);
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch('/api/themes/activate', {
-        method: 'POST',
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch("/api/themes/activate", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ themeName }),
@@ -109,27 +87,25 @@ export default function ThemesPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || '主题启用失败');
+        throw new Error(data.error || "主题启用失败");
       }
 
       setActiveTheme(themeName);
-      setMessage('主题启用成功。');
+      setMessage("主题启用成功。");
     } catch (error: any) {
-      console.error('启用主题失败:', error);
-      setMessage(error?.message || '启用失败，请稍后重试。');
+      console.error("启用主题失败:", error);
+      setMessage(error?.message || "启用失败，请稍后重试。");
     } finally {
       setPending(null);
     }
   };
 
-  const handlePreview = (themeName: string) => {
-    const url = previewUrls[themeName];
-    if (!url) {
-      setMessage('预览仍在生成，请稍后再试。');
-      return;
-    }
-    window.open(url, '_blank');
-  };
+  const previewSrc = useMemo(() => {
+    return themes.reduce<Record<string, string>>((acc, theme) => {
+      acc[theme.name] = `/preview?theme=${theme.name}&embed=1`;
+      return acc;
+    }, {});
+  }, [themes]);
 
   if (loading) {
     return (
@@ -155,7 +131,7 @@ export default function ThemesPage() {
             <div className="flex items-center gap-3">
               <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               <span>当前主题：</span>
-              <strong className="text-white">{activeTheme || '未设置'}</strong>
+              <strong className="text-white">{activeTheme || "未设置"}</strong>
             </div>
           </div>
         </div>
@@ -170,27 +146,28 @@ export default function ThemesPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {themes.map(theme => {
           const isActive = activeTheme === theme.name;
-          const previewUrl = previewUrls[theme.name];
+          const loadingPreview = previewLoading[theme.name];
+          const src = previewSrc[theme.name];
 
           return (
             <div
-              key={theme._id}
+              key={theme._id ?? theme.name}
               className={`overflow-hidden rounded-3xl border bg-slate-900/70 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.95)] backdrop-blur transition ${
                 isActive ? 'border-indigo-400/40' : 'border-white/10'
               }`}
             >
               <div className="relative h-64 border-b border-white/5 bg-slate-950/80">
-                {previewUrl ? (
-                  <iframe
-                    src={previewUrl}
-                    title={`${theme.title} preview`}
-                    className="h-full w-full scale-[0.78] origin-top-left bg-white"
-                    style={{ width: '128%', pointerEvents: 'none' }}
-                  />
-                ) : (
-                  <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-slate-400">
-                    <span className="inline-flex h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
-                    预览生成中...
+                <iframe
+                  src={src}
+                  title={`${theme.title} preview`}
+                  className="h-full w-full scale-[0.78] origin-top-left bg-white"
+                  style={{ width: '128%', pointerEvents: 'none' }}
+                  onLoad={() => setPreviewLoading(prev => ({ ...prev, [theme.name]: false }))}
+                />
+                {loadingPreview && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/60 text-sm text-slate-200">
+                    <span className="inline-flex h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                    预览生成中…
                   </div>
                 )}
                 {isActive && (
@@ -209,14 +186,14 @@ export default function ThemesPage() {
                 </div>
 
                 <div className="grid gap-2 text-xs text-slate-400 sm:grid-cols-3">
-                  <span>版本：{theme.version}</span>
+                  <span>版本：{theme.version || '1.0.0'}</span>
                   <span>作者：{theme.author || 'NavGo 团队'}</span>
                   <span>标识：{theme.name}</span>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
                   <button
-                    onClick={() => handlePreview(theme.name)}
+                    onClick={() => void handlePreview(theme.name)}
                     className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:border-white/30 hover:bg-white/10"
                   >
                     预览

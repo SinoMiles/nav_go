@@ -56,9 +56,9 @@ const ThemeSchema = new Schema<ITheme>(
   }
 );
 
-ThemeSchema.index({ name: 1 });
 
 const Theme: Model<ITheme> =
   mongoose.models.Theme || mongoose.model<ITheme>('Theme', ThemeSchema);
 
 export default Theme;
+

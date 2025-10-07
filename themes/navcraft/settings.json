@@ -1,0 +1,24 @@
+{
+  "name": "navcraft",
+  "title": "NavCraft Light Theme",
+  "description": "Bright sidebar and card-driven navigation layout inspired by NavCraft UI",
+  "version": "1.0.0",
+  "author": "NavGo Team",
+  "previewUrl": "/themes/navcraft/preview.png",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "primaryColor": {
+        "type": "string",
+        "title": "Primary accent color",
+        "default": "#2563eb"
+      },
+      "headerTagline": {
+        "type": "string",
+        "title": "Header tagline",
+        "default": "Curated navigation experience"
+      }
+    }
+  }
+}
+

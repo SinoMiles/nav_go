@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import SidebarNavTheme from "@/themes/sidebar-nav";
-import FullscreenSectionTheme from "@/themes/fullscreen-section";
+import type { ComponentType } from "react";
+import type { ThemeProps } from "@/lib/types/theme";
+import { importThemeComponent } from "@/lib/theme-loader";
 
-type ThemeComponentProps = React.ComponentProps<typeof SidebarNavTheme>;
+type ThemeComponentProps = ThemeProps;
 
 type ThemeConfigField = {
   type: "color" | "text" | "url" | "boolean" | "list";
@@ -13,11 +14,6 @@ type ThemeConfigField = {
   placeholder?: string;
   itemLabel?: string;
   fields?: Record<string, ThemeConfigField>;
-};
-
-const THEME_COMPONENTS: Record<string, React.ComponentType<ThemeComponentProps>> = {
-  "sidebar-nav": SidebarNavTheme,
-  "fullscreen-section": FullscreenSectionTheme,
 };
 
 interface PreviewShellProps {
@@ -73,11 +69,45 @@ const PANEL_OFFSET = 24;
 export default function PreviewShell(props: PreviewShellProps) {
   const { themeName, categories, links, siteName, initialConfig, configSchema } = props;
 
-  const ThemeComponent = THEME_COMPONENTS[themeName] ?? FullscreenSectionTheme;
+  const [themeComponent, setThemeComponent] = useState<ComponentType<ThemeComponentProps> | null>(null);
+  const [loadingTheme, setLoadingTheme] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingTheme(true);
+    const loadTheme = async () => {
+      try {
+        const component = await importThemeComponent(themeName);
+        if (!cancelled) {
+          setThemeComponent(() => component);
+        }
+      } catch (error) {
+        console.error('预览主题加载失败:', themeName, error);
+        if (!cancelled) {
+          try {
+            const fallback = await importThemeComponent('fullscreen-section');
+            if (!cancelled) setThemeComponent(() => fallback);
+          } catch (fallbackError) {
+            console.error('Fallback theme load failed:', fallbackError);
+            if (!cancelled) setThemeComponent(null);
+          }
+        }
+      } finally {
+        if (!cancelled) setLoadingTheme(false);
+      }
+    };
+    void loadTheme();
+    return () => {
+      cancelled = true;
+    };
+  }, [themeName]);
+
   const savedConfig = useMemo(
     () => mergeConfigWithDefaults(configSchema, initialConfig),
     [configSchema, initialConfig],
   );
+
+  const LoadedTheme = themeComponent;
 
   const [panelOpen, setPanelOpen] = useState(true);
   const [config, setConfig] = useState<Record<string, any>>(savedConfig);
@@ -120,13 +150,13 @@ export default function PreviewShell(props: PreviewShellProps) {
 
   const handleSave = async () => {
     if (!configSchema || Object.keys(configSchema).length === 0) {
-      setToast("当前主题暂不支持自定义配置");
+      setToast("当前主题暂不支持自定义配置。");
       return;
     }
 
     const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
     if (!token) {
-      setToast("请登录后台后再保存配置");
+      setToast("请登录后台后再保存配置。");
       return;
     }
 
@@ -160,12 +190,12 @@ export default function PreviewShell(props: PreviewShellProps) {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "保存失败");
+        throw new Error(data.error || "保存失败，请稍后重试。");
       }
-      setToast("配置已保存");
+      setToast("配置已保存。");
     } catch (error: any) {
       console.error("保存主题配置失败:", error);
-      setToast(error?.message || "保存失败，请稍后再试");
+      setToast(error?.message || "保存失败，请稍后重试。");
     } finally {
       setSaving(false);
     }
@@ -248,7 +278,7 @@ export default function PreviewShell(props: PreviewShellProps) {
                             handleListEntryChange(key, index, entryKey, event.target.value)
                           }
                           placeholder={entryField.placeholder || entryField.label || ""}
-                          className="w全 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
                         />
                       );
                     })}
@@ -256,7 +286,7 @@ export default function PreviewShell(props: PreviewShellProps) {
                 ))
               ) : (
                 <p className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-xs text-slate-400">
-                  暂无可编辑数据，请在后台配置后再试。
+                  暂无可编辑数据，请先到后台配置后再试。
                 </p>
               )}
             </div>
@@ -283,17 +313,23 @@ export default function PreviewShell(props: PreviewShellProps) {
   return (
     <div className="relative min-h-screen bg-slate-50">
       <div className="bg-yellow-500 px-4 py-2 text-center font-semibold text-black">
-        ⚠️ 预览模式 - 当前主题：{themeName}
+        🟡 Preview Mode – 当前主题：{themeName}
       </div>
 
-      <ThemeComponent
-        categories={categories}
-        links={links}
-        siteName={siteName}
-        config={config}
-      >
-        {null}
-      </ThemeComponent>
+      {LoadedTheme ? (
+        <LoadedTheme
+          categories={categories}
+          links={links}
+          siteName={siteName}
+          config={config}
+        >
+          {null}
+        </LoadedTheme>
+      ) : (
+        <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-400">
+          {loadingTheme ? '主题加载中…' : '无法加载当前主题'}
+        </div>
+      )}
 
       <button
         type="button"
@@ -302,7 +338,7 @@ export default function PreviewShell(props: PreviewShellProps) {
         className={`fixed top-1/2 z-[120] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-all duration-300 hover:bg-slate-800 ${panelOpen ? "ring-2 ring-white" : ""}`}
         aria-label="切换主题配置面板"
       >
-        ⚙️
+        ☰
       </button>
 
       <aside
@@ -312,7 +348,7 @@ export default function PreviewShell(props: PreviewShellProps) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">主题设置</h2>
-            <p className="text-xs text-slate-400">实时调整配色并查看效果</p>
+            <p className="text-xs text-slate-400">实时调整主题配置并预览效果</p>
           </div>
           <button
             type="button"
@@ -329,7 +365,7 @@ export default function PreviewShell(props: PreviewShellProps) {
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-200 text-xs text-slate-400">
-            当前主题暂无可配置选项
+            当前主题暂未提供可配置选项
           </div>
         )}
 
@@ -352,3 +388,15 @@ export default function PreviewShell(props: PreviewShellProps) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+

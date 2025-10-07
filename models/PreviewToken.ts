@@ -35,7 +35,6 @@ const PreviewTokenSchema = new Schema<IPreviewToken>(
   }
 );
 
-PreviewTokenSchema.index({ token: 1 });
 PreviewTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL索引
 
 const PreviewToken: Model<IPreviewToken> =
@@ -43,3 +42,4 @@ const PreviewToken: Model<IPreviewToken> =
   mongoose.model<IPreviewToken>('PreviewToken', PreviewTokenSchema);
 
 export default PreviewToken;
+
