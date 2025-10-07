@@ -1,52 +1,62 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 
 type MobileBottomBarProps = {
   accent: string;
   hasActiveFilter: boolean;
   onOpenMenu: () => void;
-  onOpenSubmit: () => void;
   onClearFilter: () => void;
   onScrollTop: () => void;
+  submitHref: string;
 };
 
-const ActionButton = ({
-  label,
-  onClick,
-  active,
-  icon,
-}: {
+type ActionButtonProps = {
   label: string;
-  onClick: () => void;
-  active?: boolean;
   icon: ReactNode;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`flex flex-1 flex-col items-center gap-1 text-[11px] font-medium transition ${
-      active ? "text-white" : "text-white/70"
-    }`}
-  >
-    <span
-      className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm transition ${
-        active
-          ? "border-white bg-white/20"
-          : "border-white/30 bg-white/10"
-      }`}
-    >
-      {icon}
-    </span>
-    {label}
-  </button>
-);
+  active?: boolean;
+  onClick?: () => void;
+  href?: string;
+};
+
+const ActionButton = ({ label, icon, active, onClick, href }: ActionButtonProps) => {
+  const className = `flex flex-1 flex-col items-center gap-1 text-[11px] font-medium transition ${
+    active ? "text-white" : "text-white/70"
+  }`;
+
+  const content = (
+    <>
+      <span
+        className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm transition ${
+          active ? "border-white bg-white/20" : "border-white/30 bg-white/10"
+        }`}
+      >
+        {icon}
+      </span>
+      {label}
+    </>
+  );
+
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {content}
+    </button>
+  );
+};
 
 export const MobileBottomBar = ({
   accent,
   hasActiveFilter,
   onOpenMenu,
-  onOpenSubmit,
   onClearFilter,
   onScrollTop,
+  submitHref,
 }: MobileBottomBarProps) => (
   <nav className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center lg:hidden">
     <div
@@ -54,7 +64,7 @@ export const MobileBottomBar = ({
       style={{ backgroundColor: accent }}
     >
       <ActionButton
-        label="分类"
+        label="分类菜单"
         onClick={onOpenMenu}
         icon={
           <svg
@@ -72,7 +82,7 @@ export const MobileBottomBar = ({
         }
       />
       <ActionButton
-        label="全部"
+        label="全部分类"
         onClick={onClearFilter}
         active={!hasActiveFilter}
         icon={
@@ -92,8 +102,8 @@ export const MobileBottomBar = ({
         }
       />
       <ActionButton
-        label="投稿"
-        onClick={onOpenSubmit}
+        label="提交站点"
+        href={submitHref}
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -111,7 +121,7 @@ export const MobileBottomBar = ({
         }
       />
       <ActionButton
-        label="顶部"
+        label="返回顶部"
         onClick={onScrollTop}
         icon={
           <svg

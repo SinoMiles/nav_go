@@ -1,0 +1,28 @@
+﻿{
+  "name": "glass-panels",
+  "title": "Glass Panels Layout",
+  "description": "玻璃拟态风格的卡片布局，突出分类标签与站点亮点",
+  "version": "1.0.0",
+  "author": "NavGo Team",
+  "previewUrl": "/themes/glass-panels/preview.png",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "primaryColor": {
+        "type": "string",
+        "title": "主题主色",
+        "default": "#6366f1"
+      },
+      "tagline": {
+        "type": "string",
+        "title": "顶部标语",
+        "default": "精选导航合集，覆盖工具、资讯与社区"
+      },
+      "actionLabel": {
+        "type": "string",
+        "title": "CTA 按钮文案",
+        "default": "提交友链"
+      }
+    }
+  }
+}

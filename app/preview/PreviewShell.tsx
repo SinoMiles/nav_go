@@ -1,20 +1,13 @@
-﻿"use client";
+﻿
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import type { ThemeProps } from "@/lib/types/theme";
 import { importThemeComponent } from "@/lib/theme-loader";
+import { ThemeSettingsDrawer, ThemeConfigField } from "@/themes/shared/ThemeSettingsDrawer";
 
 type ThemeComponentProps = ThemeProps;
-
-type ThemeConfigField = {
-  type: "color" | "text" | "url" | "boolean" | "list";
-  label?: string;
-  default?: any;
-  placeholder?: string;
-  itemLabel?: string;
-  fields?: Record<string, ThemeConfigField>;
-};
 
 interface PreviewShellProps {
   themeName: string;
@@ -23,6 +16,7 @@ interface PreviewShellProps {
   siteName: string;
   initialConfig: Record<string, any>;
   configSchema?: Record<string, ThemeConfigField>;
+  embed?: boolean;
 }
 
 const buildDefaultConfig = (schema?: Record<string, ThemeConfigField>) => {
@@ -63,11 +57,10 @@ const mergeConfigWithDefaults = (
   return merged;
 };
 
-const PANEL_WIDTH = 320;
-const PANEL_OFFSET = 24;
-
 export default function PreviewShell(props: PreviewShellProps) {
-  const { themeName, categories, links, siteName, initialConfig, configSchema } = props;
+  const { themeName, categories, links, siteName, initialConfig, configSchema, embed = false } = props;
+  const showControls = !embed;
+  const containerClass = embed ? "relative min-h-[600px] bg-white" : "relative min-h-screen bg-slate-50";
 
   const [themeComponent, setThemeComponent] = useState<ComponentType<ThemeComponentProps> | null>(null);
   const [loadingTheme, setLoadingTheme] = useState(false);
@@ -75,6 +68,7 @@ export default function PreviewShell(props: PreviewShellProps) {
   useEffect(() => {
     let cancelled = false;
     setLoadingTheme(true);
+
     const loadTheme = async () => {
       try {
         const component = await importThemeComponent(themeName);
@@ -82,13 +76,13 @@ export default function PreviewShell(props: PreviewShellProps) {
           setThemeComponent(() => component);
         }
       } catch (error) {
-        console.error('预览主题加载失败:', themeName, error);
+        console.error("Failed to load preview theme:", themeName, error);
         if (!cancelled) {
           try {
-            const fallback = await importThemeComponent('fullscreen-section');
+            const fallback = await importThemeComponent("fullscreen-section");
             if (!cancelled) setThemeComponent(() => fallback);
           } catch (fallbackError) {
-            console.error('Fallback theme load failed:', fallbackError);
+            console.error("Fallback theme load failed:", fallbackError);
             if (!cancelled) setThemeComponent(null);
           }
         }
@@ -96,7 +90,9 @@ export default function PreviewShell(props: PreviewShellProps) {
         if (!cancelled) setLoadingTheme(false);
       }
     };
+
     void loadTheme();
+
     return () => {
       cancelled = true;
     };
@@ -107,9 +103,11 @@ export default function PreviewShell(props: PreviewShellProps) {
     [configSchema, initialConfig],
   );
 
-  const LoadedTheme = themeComponent;
+  const [panelOpen, setPanelOpen] = useState(!embed);
+  useEffect(() => {
+    setPanelOpen(!embed);
+  }, [embed]);
 
-  const [panelOpen, setPanelOpen] = useState(true);
   const [config, setConfig] = useState<Record<string, any>>(savedConfig);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -150,13 +148,13 @@ export default function PreviewShell(props: PreviewShellProps) {
 
   const handleSave = async () => {
     if (!configSchema || Object.keys(configSchema).length === 0) {
-      setToast("当前主题暂不支持自定义配置。");
+      setToast("This theme does not support editable configuration.");
       return;
     }
 
     const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
     if (!token) {
-      setToast("请登录后台后再保存配置。");
+      setToast("Please sign in to the admin before saving.");
       return;
     }
 
@@ -190,131 +188,26 @@ export default function PreviewShell(props: PreviewShellProps) {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "保存失败，请稍后重试。");
+        throw new Error(data.error || "Save failed, please try again later.");
       }
-      setToast("配置已保存。");
+      setToast("Configuration saved.");
     } catch (error: any) {
-      console.error("保存主题配置失败:", error);
-      setToast(error?.message || "保存失败，请稍后重试。");
+      console.error("Failed to save theme configuration:", error);
+      setToast(error?.message || "Save failed, please try again later.");
     } finally {
       setSaving(false);
     }
   };
 
-  const renderField = (key: string, field: ThemeConfigField) => {
-    const label = field.label || key;
-    const value = config[key];
-
-    switch (field.type) {
-      case "color": {
-        const defaultValue =
-          typeof field.default === "string" && field.default ? field.default : "#2563eb";
-        const colorValue = typeof value === "string" && value ? value : defaultValue;
-        return (
-          <label key={key} className="flex flex-col gap-2 text-sm">
-            <span className="font-medium text-slate-600">{label}</span>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={colorValue}
-                onChange={event => handleFieldChange(key, event.target.value)}
-                className="h-10 w-16 cursor-pointer rounded border border-slate-200 bg-white"
-              />
-              <button
-                type="button"
-                onClick={() => handleFieldChange(key, undefined)}
-                disabled={value === undefined}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                  value === undefined
-                    ? 'cursor-not-allowed border-slate-200 text-slate-400'
-                    : 'border-slate-300 text-slate-600 hover:border-slate-400 hover:text-slate-800'
-                }`}
-              >
-                恢复默认
-              </button>
-            </div>
-          </label>
-        );
-      }
-
-      case "boolean":
-        return (
-          <label
-            key={key}
-            className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          >
-            <span className="text-slate-600">{label}</span>
-            <input
-              type="checkbox"
-              checked={Boolean(value)}
-              onChange={event => handleFieldChange(key, event.target.checked)}
-              className="h-4 w-4"
-            />
-          </label>
-        );
-
-      case "list": {
-        const listValue = Array.isArray(value) ? value : [];
-        const entries = field.fields || {};
-
-        return (
-          <div key={key} className="space-y-3">
-            <span className="text-sm font-medium text-slate-600">{label}</span>
-            <div className="space-y-2">
-              {listValue.length > 0 ? (
-                listValue.map((item: Record<string, any>, index: number) => (
-                  <div
-                    key={`${key}-${index}`}
-                    className="space-y-2 rounded-xl border border-slate-200 p-3"
-                  >
-                    {Object.entries(entries).map(([entryKey, entryField]) => {
-                      const inputType = entryField.type === "url" ? "url" : "text";
-                      return (
-                        <input
-                          key={`${key}-${index}-${entryKey}`}
-                          type={inputType}
-                          value={item?.[entryKey] || ""}
-                          onChange={event =>
-                            handleListEntryChange(key, index, entryKey, event.target.value)
-                          }
-                          placeholder={entryField.placeholder || entryField.label || ""}
-                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-                        />
-                      );
-                    })}
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-xs text-slate-400">
-                  暂无可编辑数据，请先到后台配置后再试。
-                </p>
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      default:
-        return (
-          <label key={key} className="flex flex-col gap-2 text-sm">
-            <span className="font-medium text-slate-600">{label}</span>
-            <input
-              type="text"
-              value={value || ""}
-              placeholder={field.placeholder || ""}
-              onChange={event => handleFieldChange(key, event.target.value)}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-            />
-          </label>
-        );
-    }
-  };
+  const LoadedTheme = themeComponent;
 
   return (
-    <div className="relative min-h-screen bg-slate-50">
-      <div className="bg-yellow-500 px-4 py-2 text-center font-semibold text-black">
-        🟡 Preview Mode – 当前主题：{themeName}
-      </div>
+    <div className={containerClass}>
+      {showControls && (
+        <div className="bg-yellow-500 px-4 py-2 text-center font-semibold text-black">
+          Preview Mode - Theme: {themeName}
+        </div>
+      )}
 
       {LoadedTheme ? (
         <LoadedTheme
@@ -327,76 +220,27 @@ export default function PreviewShell(props: PreviewShellProps) {
         </LoadedTheme>
       ) : (
         <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-400">
-          {loadingTheme ? '主题加载中…' : '无法加载当前主题'}
+          {loadingTheme ? "Loading theme..." : "Unable to load this theme"}
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setPanelOpen(prev => !prev)}
-        style={{ right: panelOpen ? PANEL_WIDTH + PANEL_OFFSET + 16 : PANEL_OFFSET }}
-        className={`fixed top-1/2 z-[120] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-all duration-300 hover:bg-slate-800 ${panelOpen ? "ring-2 ring-white" : ""}`}
-        aria-label="切换主题配置面板"
-      >
-        ☰
-      </button>
-
-      <aside
-        style={{ width: PANEL_WIDTH }}
-        className={`fixed right-6 top-1/2 z-[110] flex max-h-[calc(100vh-8rem)] max-w-none -translate-y-1/2 flex-col gap-3 overflow-hidden rounded-3xl border border-slate-200 bg-white px-4 pb-5 pt-5 shadow-2xl transition-transform duration-300 ${panelOpen ? "translate-x-0" : "translate-x-full"}`}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">主题设置</h2>
-            <p className="text-xs text-slate-400">实时调整主题配置并预览效果</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setPanelOpen(false)}
-            className="rounded-full border border-transparent px-2 py-1 text-sm text-slate-400 transition hover:text-slate-600"
-          >
-            收起
-          </button>
-        </div>
-
-        {configSchema && Object.keys(configSchema).length > 0 ? (
-          <div className="flex-1 space-y-4 overflow-y-auto pr-1">
-            {Object.entries(configSchema).map(([key, field]) => renderField(key, field))}
-          </div>
-        ) : (
-          <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-200 text-xs text-slate-400">
-            当前主题暂未提供可配置选项
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={handleSave}
-            className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={saving}
-          >
-            {saving ? "保存中…" : "保存配置"}
-          </button>
-        </div>
-
-        {toast && (
-          <div className="pointer-events-none fixed bottom-6 right-4 z-[130] rounded-full bg-slate-900/90 px-4 py-2 text-xs font-medium text-white shadow-lg">
-            {toast}
-          </div>
-        )}
-      </aside>
+      {showControls && (
+        <ThemeSettingsDrawer
+          open={panelOpen}
+          visible={showControls}
+          onOpenChange={setPanelOpen}
+          configSchema={configSchema}
+          config={config}
+          onFieldChange={handleFieldChange}
+          onListEntryChange={handleListEntryChange}
+          onSave={handleSave}
+          saving={saving}
+          toast={toast}
+        />
+      )}
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
 
 
 

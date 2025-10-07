@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { ThemeProps } from '@/lib/types/theme';
-import AddLinkModal from '@/themes/shared/AddLinkModal';
 
 const gradients = [
   ['#2563eb', '#9333ea'],
@@ -34,7 +33,6 @@ export default function FullscreenSectionTheme({
 }: ThemeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
-  const [showSubmit, setShowSubmit] = useState(false);
 
   const accent = config?.primaryColor || '#2563eb';
   const hasCategories = categories.length > 0;
@@ -60,15 +58,6 @@ export default function FullscreenSectionTheme({
       .filter(link => parseId(link.categoryId) === categoryId)
       .slice(0, 6);
   }, [links, activeCategory]);
-
-  const categoriesForModal = useMemo(
-    () =>
-      categories.map(category => ({
-        id: parseId(category._id),
-        title: category.title,
-      })),
-    [categories]
-  );
 
   const gradientPair = gradients[safeIndex % gradients.length];
 
@@ -99,6 +88,10 @@ export default function FullscreenSectionTheme({
     const id = parseId(link._id);
     if (!id) return;
     window.location.href = `/link/${id}`;
+  };
+
+  const openSubmitPage = () => {
+    window.open('/submit', '_blank', 'noopener,noreferrer');
   };
 
   if (children) {
@@ -138,7 +131,7 @@ export default function FullscreenSectionTheme({
               {autoPlay ? '暂停轮播' : '自动轮播'}
             </button>
             <button
-              onClick={() => setShowSubmit(true)}
+              onClick={openSubmitPage}
               className="rounded-full border border-white/20 px-4 py-2 font-medium text-white/80 transition hover:border-white/40 hover:text-white"
             >
               提交链接
@@ -301,7 +294,7 @@ export default function FullscreenSectionTheme({
               返回首页
             </a>
             <button
-              onClick={() => setShowSubmit(true)}
+              onClick={openSubmitPage}
               className="rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-white transition hover:border-white/40" 
             >
               提交链接
@@ -314,19 +307,13 @@ export default function FullscreenSectionTheme({
       </footer>
 
       <button
-        onClick={() => setShowSubmit(true)}
+        onClick={openSubmitPage}
         className="fixed bottom-6 right-6 z-[90] rounded-full px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
         style={{ backgroundColor: accent }}
       >
         提交链接
       </button>
 
-      <AddLinkModal
-        open={showSubmit}
-        onClose={() => setShowSubmit(false)}
-        categories={categoriesForModal}
-        accentColor={accent}
-      />
     </div>
   );
 }

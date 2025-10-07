@@ -1,4 +1,4 @@
-import type { NormalizedCategory } from "../types";
+﻿import type { NormalizedCategory } from "../types";
 import { CategoryFilterChips } from "./CategoryFilterChips";
 
 type MobileCategoryDrawerProps = {
@@ -12,7 +12,7 @@ type MobileCategoryDrawerProps = {
   activeChild: string | null;
   onRootSelect: (rootId: string | null) => void;
   onChildSelect: (childId: string | null) => void;
-  onOpenSubmit: () => void;
+  submitHref: string;
 };
 
 export const MobileCategoryDrawer = ({
@@ -26,7 +26,7 @@ export const MobileCategoryDrawer = ({
   activeChild,
   onRootSelect,
   onChildSelect,
-  onOpenSubmit,
+  submitHref,
 }: MobileCategoryDrawerProps) => {
   const handleRootClick = (rootId: string) => {
     onRootSelect(rootId);
@@ -34,9 +34,7 @@ export const MobileCategoryDrawer = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 transition ${
-        open ? "pointer-events-auto" : "pointer-events-none"
-      }`}
+      className={`fixed inset-0 z-50 transition ${open ? "pointer-events-auto" : "pointer-events-none"}`}
       aria-hidden={!open}
     >
       <div
@@ -78,9 +76,7 @@ export const MobileCategoryDrawer = ({
                   type="button"
                   onClick={() => handleRootClick(root.id)}
                   className={`flex w-full items-center justify-between gap-3 text-left transition ${
-                    active
-                      ? "text-[color:var(--theme-accent)]"
-                      : "text-slate-700 hover:text-[color:var(--theme-accent)]"
+                    active ? "text-[color:var(--theme-accent)]" : "text-slate-700 hover:text-[color:var(--theme-accent)]"
                   }`}
                   style={{ ['--theme-accent' as any]: accent }}
                 >
@@ -120,17 +116,16 @@ export const MobileCategoryDrawer = ({
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              onOpenSubmit();
-              onClose();
-            }}
+          <a
+            href={submitHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
             className="flex-1 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
             style={{ backgroundColor: accent }}
           >
-            投稿站点
-          </button>
+            提交站点
+          </a>
           <button
             type="button"
             onClick={() => {

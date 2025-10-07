@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 
-import AddLinkModal from "@/themes/shared/AddLinkModal";
 import type { ThemeProps } from "@/lib/types/theme";
 
 const parseId = (value: any): string => {
@@ -63,7 +62,7 @@ type NavCraftData = {
 
 export default function NavCraftTheme({ categories, links, config, siteName, children }: ThemeProps) {
   const accent = config?.primaryColor || "#2563eb";
-  const defaultTagline = "Curated navigation experience";
+  const defaultTagline = "精选导航体验";
   const headerTagline = (config?.headerTagline || defaultTagline).trim() || defaultTagline;
 
   const { navItems, categoryOptions, categoryMap, aggregatedLinks, initialActive } = useNavCraftData(
@@ -72,8 +71,6 @@ export default function NavCraftTheme({ categories, links, config, siteName, chi
   );
 
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(initialActive);
-  const [showSubmit, setShowSubmit] = useState(false);
-
   const activeCategory = activeCategoryId ? categoryMap.get(activeCategoryId) ?? null : null;
   const activeLinks = activeCategoryId ? aggregatedLinks.get(activeCategoryId) ?? [] : [];
 
@@ -92,7 +89,7 @@ export default function NavCraftTheme({ categories, links, config, siteName, chi
               )}
               <div>
                 <p className="text-lg font-semibold">{siteName || "NavCraft"}</p>
-                <p className="text-xs text-slate-500">Site navigation</p>
+                <p className="text-xs text-slate-500">站点导航</p>
               </div>
             </div>
           </div>
@@ -146,24 +143,26 @@ export default function NavCraftTheme({ categories, links, config, siteName, chi
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => setShowSubmit(true)}
+              <a
+                href="/submit"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-transparent bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 px-5 py-2 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
               >
-                Submit link
-              </button>
+                提交站点
+              </a>
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
               >
-                Back to top
+                回到顶部
               </button>
             </div>
           </header>
 
           {activeLinks.length === 0 ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500 shadow-sm">
-              No links yet. Share one!
+              暂无链接，欢迎提交。
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -175,7 +174,6 @@ export default function NavCraftTheme({ categories, links, config, siteName, chi
         </main>
       </div>
 
-      <AddLinkModal open={showSubmit} onClose={() => setShowSubmit(false)} categories={categoryOptions} accentColor={accent} />
       {children}
     </div>
   );
@@ -247,7 +245,7 @@ function useNavCraftData(categories: any[], links: any[]): NavCraftData {
       aggregatedLinks.set(id, bucket);
       return {
         id,
-        title: category.title || "Untitled category",
+        title: category.title || "未命名分类",
         description: category.description,
         count,
       };
@@ -260,25 +258,25 @@ function useNavCraftData(categories: any[], links: any[]): NavCraftData {
       aggregatedLinks.set(uncategorizedId, uncategorizedLinks);
       navItems.push({
         id: uncategorizedId,
-        title: "Uncategorized",
-        description: "Links waiting for classification",
+        title: "未分类",
+        description: "等待分类的站点",
         count: uncategorizedLinks.length,
       });
       categoryMap.set(uncategorizedId, {
         _id: uncategorizedId,
-        title: "Uncategorized",
-        description: "These sites are not yet assigned to a category",
+        title: "未分类",
+        description: "这些站点尚未归类",
       });
     }
 
-    const itemsToUse = navItems.length > 0 ? navItems : [{ id: "__all__", title: "All", count: linkRecords.length }];
+    const itemsToUse = navItems.length > 0 ? navItems : [{ id: "__all__", title: "全部站点", count: linkRecords.length }];
     if (!aggregatedLinks.has("__all__") && itemsToUse[0].id === "__all__") {
       aggregatedLinks.set("__all__", linkRecords.slice());
     }
 
     const categoryOptions = sortCategories(categoryRecords).map(category => ({
       id: parseId(category._id),
-      title: category.title || "Untitled category",
+      title: category.title || "未命名分类",
     }));
 
     const initialActive = itemsToUse[0]?.id ?? null;
@@ -311,7 +309,7 @@ function LinkCard({ link, accent }: { link: LinkRecord; accent: string }) {
       </div>
       <div className="flex flex-1 flex-col gap-2">
         <div>
-          <p className="text-base font-semibold text-slate-900">{link.title || "Untitled"}</p>
+          <p className="text-base font-semibold text-slate-900">{link.title || "未命名站点"}</p>
           {link.description && <p className="text-sm text-slate-600">{link.description}</p>}
         </div>
         {tags.length > 0 && (
@@ -331,3 +329,10 @@ function LinkCard({ link, accent }: { link: LinkRecord; accent: string }) {
     </a>
   );
 }
+
+
+
+
+
+
+
