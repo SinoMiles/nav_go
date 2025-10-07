@@ -8,6 +8,7 @@ export interface ISettings extends Document {
   logo?: string;
   favicon?: string;
   headerTagline?: string;
+  friendLinkDomain?: string;
   themeConfigs: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
@@ -37,7 +38,12 @@ const SettingsSchema = new Schema<ISettings>(
     },
     headerTagline: {
       type: String,
-      default: '优雅 永不过时...',
+      default: '',
+    },
+    friendLinkDomain: {
+      type: String,
+      default: '',
+      trim: true,
     },
     themeConfigs: {
       type: Schema.Types.Mixed,

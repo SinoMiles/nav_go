@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 
 interface SettingsState {
   siteName: string;
@@ -10,22 +10,24 @@ interface SettingsState {
   logo: string;
   favicon: string;
   headerTagline: string;
+  friendLinkDomain: string;
 }
 
 const INITIAL_STATE: SettingsState = {
-  siteName: '',
-  siteDescription: '',
-  siteKeywords: '',
-  logo: '',
-  favicon: '',
-  headerTagline: '',
+  siteName: "",
+  siteDescription: "",
+  siteKeywords: "",
+  logo: "",
+  favicon: "",
+  headerTagline: "",
+  friendLinkDomain: "",
 };
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsState>(INITIAL_STATE);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     void loadSettings();
@@ -33,27 +35,28 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!message) return;
-    const timer = setTimeout(() => setMessage(''), 3000);
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(() => setMessage(""), 3000);
+    return () => window.clearTimeout(timer);
   }, [message]);
 
   const loadSettings = async () => {
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch("/api/settings");
       const data = await res.json();
       if (data.settings) {
         setSettings({
-          siteName: data.settings.siteName || '',
-          siteDescription: data.settings.siteDescription || '',
-          siteKeywords: data.settings.siteKeywords || '',
-          logo: data.settings.logo || '',
-          favicon: data.settings.favicon || '',
-          headerTagline: data.settings.headerTagline || '',
+          siteName: data.settings.siteName || "",
+          siteDescription: data.settings.siteDescription || "",
+          siteKeywords: data.settings.siteKeywords || "",
+          logo: data.settings.logo || "",
+          favicon: data.settings.favicon || "",
+          headerTagline: data.settings.headerTagline || "",
+          friendLinkDomain: data.settings.friendLinkDomain || "",
         });
       }
     } catch (error) {
-      console.error('加载站点设置失败:', error);
-      setMessage('站点设置加载失败，请稍后再试。');
+      console.error("加载站点设置失败:", error);
+      setMessage("站点设置加载失败，请稍后重试。");
     } finally {
       setLoading(false);
     }
@@ -62,28 +65,33 @@ export default function SettingsPage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSaving(true);
-    setMessage('');
+    setMessage("");
 
     try {
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
+      const token = window.localStorage.getItem("admin_token");
+      const payload = {
+        ...settings,
+        friendLinkDomain: settings.friendLinkDomain.trim(),
+      };
+
+      const res = await fetch("/api/settings", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
         },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || '保存设置失败');
+        throw new Error(data.error || "保存站点设置失败");
       }
 
-      setMessage('设置保存成功。');
+      setMessage("站点设置保存成功。");
     } catch (error: any) {
-      console.error('保存设置失败:', error);
-      setMessage(error?.message || '保存失败，请稍后重试。');
+      console.error("保存站点设置失败:", error);
+      setMessage(error?.message || "保存失败，请稍后重试。");
     } finally {
       setSaving(false);
     }
@@ -93,7 +101,7 @@ export default function SettingsPage() {
     return (
       <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-sm text-slate-300">
         <span className="inline-flex h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-white" />
-        站点配置加载中...
+        站点设置加载中…
       </div>
     );
   }
@@ -104,7 +112,7 @@ export default function SettingsPage() {
         <p className="text-xs tracking-[0.3em] text-slate-400">全局配置</p>
         <h1 className="mt-2 text-2xl font-semibold text-white">站点基础设置</h1>
         <p className="mt-3 max-w-2xl text-sm text-slate-300/85">
-          更新导航站的名称、描述与品牌素材，保持外观信息统一且专业。
+          更新导航站对外展示的站名、关键词与品牌物料，保持站点信息统一专业。
         </p>
       </header>
 
@@ -119,7 +127,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-white">站点信息</h2>
-              <p className="text-sm text-slate-300/80">设置导航站对外展示的名称、关键词与简介。</p>
+              <p className="text-sm text-slate-300/80">控制前台展现的基础文案与 SEO 关键词。</p>
             </div>
             <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs text-slate-200">
               品牌信息
@@ -134,7 +142,7 @@ export default function SettingsPage() {
                 value={settings.siteName}
                 onChange={event => setSettings(prev => ({ ...prev, siteName: event.target.value }))}
                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
-                placeholder="示例：灵感导航"
+                placeholder="示例：NavGo · 导航精选"
               />
             </label>
             <label className="space-y-2 text-sm">
@@ -147,16 +155,27 @@ export default function SettingsPage() {
                 placeholder="示例：导航, 工具, 资源"
               />
             </label>
+            <label className="space-y-2 text-sm">
+              <span className="font-medium text-slate-200">本站域名</span>
+              <input
+                type="text"
+                value={settings.friendLinkDomain}
+                onChange={event => setSettings(prev => ({ ...prev, friendLinkDomain: event.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
+                placeholder="navgo.com"
+              />
+              <p className="text-xs text-slate-400/90">用于友链互换检测，请填写不带协议的主域名，例如 navgo.com。</p>
+            </label>
             <label className="space-y-2 text-sm md:col-span-2">
-              <span className="font-medium text-slate-200">头部标语</span>
+              <span className="font-medium text-slate-200">顶部标语</span>
               <input
                 type="text"
                 value={settings.headerTagline}
                 onChange={event => setSettings(prev => ({ ...prev, headerTagline: event.target.value }))}
                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
-                placeholder="例如：优雅 永不过时..."
+                placeholder="示例：精选中文工具导航，为效率加速"
               />
-              <p className="text-xs text-slate-400/90">此文案将用于前台左侧标语，并带有打字动画效果。</p>
+              <p className="text-xs text-slate-400/90">此文案用于前台 Hero 区域的导语，并伴随字符动画效果。</p>
             </label>
           </div>
 
@@ -167,7 +186,7 @@ export default function SettingsPage() {
               onChange={event => setSettings(prev => ({ ...prev, siteDescription: event.target.value }))}
               rows={3}
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/10"
-              placeholder="一句话介绍你的导航站，例如：收集优质工具与资源的探索入口。"
+              placeholder="用一段话介绍你的导航站点，例如：收录精选效率工具与资源的中文导航站。"
             />
           </label>
         </section>
@@ -175,12 +194,10 @@ export default function SettingsPage() {
         <section className="rounded-3xl border border-white/10 bg-slate-900/55 p-6 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.95)]">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">品牌素材</h2>
-              <p className="text-sm text-slate-300/80">Logo 与站点图标会在不同主题中复用，请保持链接可访问。</p>
+              <h2 className="text-lg font-semibold text-white">品牌物料</h2>
+              <p className="text-sm text-slate-300/80">配置 Logo、站点图标等静态资源，确保链接可访问。</p>
             </div>
-            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs text-slate-200">
-              媒体资源
-            </span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs text-slate-200">素材资源</span>
           </div>
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
@@ -198,14 +215,14 @@ export default function SettingsPage() {
               {settings.logo && (
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-slate-300">
                   <p className="text-slate-200">Logo 预览</p>
-                  <img src={settings.logo} alt="Logo 预览" className="mt-3 h-16 object-contain" />
+                  <img src={settings.logo} alt="Logo" className="mt-3 h-16 object-contain" />
                 </div>
               )}
             </div>
 
             <div className="space-y-3">
               <label className="space-y-2 text-sm">
-                <span className="font-medium text-slate-200">网站图标地址</span>
+                <span className="font-medium text-slate-200">站点图标</span>
                 <input
                   type="url"
                   value={settings.favicon}
@@ -216,7 +233,7 @@ export default function SettingsPage() {
               </label>
               {settings.favicon && (
                 <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-300">
-                  <img src={settings.favicon} alt="Favicon 预览" className="h-8 w-8 object-contain" />
+                  <img src={settings.favicon} alt="Favicon" className="h-8 w-8 object-contain" />
                   <span>Favicon 预览</span>
                 </div>
               )}
@@ -240,8 +257,8 @@ export default function SettingsPage() {
               <p className="mt-2">数据库已连接 · 接口响应正常</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">维护建议</p>
-              <p className="mt-2">建议每周备份数据，并妥善保管环境变量与凭证。</p>
+              <p className="text-xs uppercase tracking-wide text-slate-400">运维建议</p>
+              <p className="mt-2">建议每周巡检数据，并及时更新环境变量与备份策略。</p>
             </div>
           </div>
         </section>
@@ -252,7 +269,7 @@ export default function SettingsPage() {
             disabled={saving}
             className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? '保存中…' : '保存设置'}
+            {saving ? "保存中…" : "保存设置"}
           </button>
         </div>
       </form>

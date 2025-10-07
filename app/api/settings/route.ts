@@ -10,7 +10,6 @@ export async function GET(req: NextRequest) {
     const settings = await Settings.findOne({});
 
     if (!settings) {
-      // 创建默认设置
       const newSettings = new Settings({
         activeTheme: 'fullscreen-section',
         siteName: 'NavGo',
@@ -22,16 +21,16 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ settings });
   } catch (error: any) {
-    console.error('获取设置错误:', error);
+    console.error('Failed to load settings:', error);
     return NextResponse.json(
-      { error: '获取设置失败' },
-      { status: 500 }
+      { error: '无法加载站点设置' },
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(req: NextRequest) {
-  return withAdminAuth(req, async (req, user) => {
+  return withAdminAuth(req, async () => {
     try {
       await connectDB();
 
@@ -43,10 +42,10 @@ export async function PUT(req: NextRequest) {
         logo,
         favicon,
         headerTagline,
+        friendLinkDomain,
       } = body;
 
       let settings = await Settings.findOne({});
-
       if (!settings) {
         settings = new Settings({});
       }
@@ -57,18 +56,21 @@ export async function PUT(req: NextRequest) {
       if (logo !== undefined) settings.logo = logo;
       if (favicon !== undefined) settings.favicon = favicon;
       if (headerTagline !== undefined) settings.headerTagline = headerTagline;
+      if (friendLinkDomain !== undefined) {
+        settings.friendLinkDomain = typeof friendLinkDomain === 'string' ? friendLinkDomain.trim() : '';
+      }
 
       await settings.save();
 
       return NextResponse.json({
-        message: '设置更新成功',
+        message: '站点设置更新成功',
         settings,
       });
     } catch (error: any) {
-      console.error('更新设置错误:', error);
+      console.error('Failed to update settings:', error);
       return NextResponse.json(
-        { error: '更新设置失败' },
-        { status: 500 }
+        { error: '更新站点设置失败' },
+        { status: 500 },
       );
     }
   });

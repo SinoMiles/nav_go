@@ -1,7 +1,7 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import LinkItem from "@/models/LinkItem";
+import Settings from "@/models/Settings";
 
 function normalizeDomain(raw?: string | null): string | null {
   if (!raw) return null;
@@ -12,6 +12,10 @@ function normalizeDomain(raw?: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 async function fetchHtml(targetUrl: string): Promise<string | null> {
@@ -73,30 +77,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const expectedHosts: string[] = [];
-    const envDomain = process.env.NEXT_PUBLIC_SITE_DOMAIN;
-    if (envDomain) {
-      envDomain.split(",").map(item => item.trim()).forEach(item => {
-        const host = normalizeDomain(item);
-        if (host) expectedHosts.push(host);
-      });
-    }
-    const authUrl = process.env.NEXTAUTH_URL;
-    const hostFromAuth = normalizeDomain(authUrl);
-    if (hostFromAuth) expectedHosts.push(hostFromAuth);
-
-    const uniqueHosts = Array.from(new Set(expectedHosts)).filter(Boolean);
+    const settings = await Settings.findOne({});
+    const configuredDomain = settings?.friendLinkDomain?.trim() || "";
+    const expectedHost = normalizeDomain(configuredDomain);
 
     let autoApproved = false;
-    if (uniqueHosts.length > 0) {
+    if (expectedHost) {
       const html = await fetchHtml(normalizedUrl.toString());
       if (html) {
-        const lowerHtml = html.toLowerCase();
-        autoApproved = uniqueHosts.some(host =>
-          lowerHtml.includes(host) ||
-          lowerHtml.includes(`https://${host}`) ||
-          lowerHtml.includes(`http://${host}`),
-        );
+        const escaped = escapeRegExp(expectedHost);
+        const pattern = new RegExp(`https?:\\/\\/[^"'\\s>]*${escaped}|${escaped}`, "i");
+        autoApproved = pattern.test(html);
       }
     }
 
@@ -118,7 +109,9 @@ export async function POST(req: NextRequest) {
     await link.save();
 
     return NextResponse.json({
-      message: autoApproved ? "Link verified and published automatically." : "Submission received and awaiting review.",
+      message: autoApproved
+        ? "Link verified and published automatically."
+        : "Submission received and awaiting review.",
       autoApproved,
       linkId: link._id,
     });
@@ -130,3 +123,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

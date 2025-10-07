@@ -118,8 +118,6 @@ export const MobileCategoryDrawer = ({
         <div className="mt-6 flex gap-3">
           <a
             href={submitHref}
-            target="_blank"
-            rel="noopener noreferrer"
             onClick={onClose}
             className="flex-1 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
             style={{ backgroundColor: accent }}
@@ -142,3 +140,4 @@ export const MobileCategoryDrawer = ({
     </div>
   );
 };
+

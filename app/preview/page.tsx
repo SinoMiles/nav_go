@@ -9,36 +9,38 @@ import PreviewShell from "./PreviewShell";
 
 export const dynamic = "force-dynamic";
 
-export default async function PreviewPage(props: {
-  searchParams: Promise<{ theme?: string; token?: string; embed?: string }>;
-}) {
+interface PreviewPageProps {
+  searchParams?: {
+    theme?: string;
+    embed?: string;
+  };
+}
+
+export default async function PreviewPage({ searchParams }: PreviewPageProps) {
   try {
     await connectDB();
     await syncThemesWithFilesystem();
 
-    const searchParams = await props.searchParams;
-    const { theme } = searchParams;
+    const theme = searchParams?.theme?.trim();
+    const embedFlag = searchParams?.embed?.toLowerCase?.() ?? "";
+    const isEmbed = embedFlag === "1" || embedFlag === "true";
 
     if (!theme) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="text-center">
-            <h1 className="mb-4 text-2xl font-bold text-red-600">{"缺少主题参数"}</h1>
-            <p className="text-gray-600">{"请在 URL 中提供 theme 参数"}</p>
-          </div>
-        </div>
+        <ErrorState
+          title="缺少主题参数"
+          description="请在 URL 中提供 theme 参数"
+        />
       );
     }
 
     const availableThemes = getAvailableThemeNames();
     if (!availableThemes.includes(theme)) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="text-center">
-            <h1 className="mb-4 text-2xl font-bold text-red-600">{"主题不存在"}</h1>
-            <p className="text-gray-600">{"请确认主题文件夹已放置于 /themes 中"}</p>
-          </div>
-        </div>
+        <ErrorState
+          title="主题不存在"
+          description="请确认主题文件夹已放置于 /themes 中"
+        />
       );
     }
 
@@ -123,17 +125,27 @@ export default async function PreviewPage(props: {
         siteName={siteName}
         initialConfig={themeConfig || {}}
         configSchema={configSchema}
+        embed={isEmbed}
       />
     );
   } catch (error) {
     console.error("preview page error:", error);
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold text-red-600">{"预览加载失败"}</h1>
-          <p className="text-gray-600">{"请稍后再试"}</p>
-        </div>
-      </div>
+      <ErrorState
+        title="预览加载失败"
+        description="请稍后再试"
+      />
     );
   }
+}
+
+function ErrorState({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="text-center">
+        <h1 className="mb-4 text-2xl font-bold text-red-600">{title}</h1>
+        <p className="text-gray-600">{description}</p>
+      </div>
+    </div>
+  );
 }

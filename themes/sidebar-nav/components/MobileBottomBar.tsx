@@ -37,7 +37,7 @@ const ActionButton = ({ label, icon, active, onClick, href }: ActionButtonProps)
 
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      <a href={href} className={className}>
         {content}
       </a>
     );
@@ -142,3 +142,4 @@ export const MobileBottomBar = ({
     </div>
   </nav>
 );
+

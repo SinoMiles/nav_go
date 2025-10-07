@@ -685,8 +685,6 @@ export default function SidebarNavTheme({ categories, links, config, siteName }:
                   <h4 className="text-sm font-semibold text-slate-800">友情链接</h4>
                   <a
                     href={submitHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-full border border-[color:var(--theme-accent)]/40 bg-[color:var(--theme-accent)]/10 px-4 py-2 text-xs font-semibold text-[color:var(--theme-accent)] transition hover:bg-[color:var(--theme-accent)]/20"
                     style={{ ["--theme-accent" as any]: accent }}
                   >
@@ -792,6 +790,7 @@ const buildSearchBucket = (links: NormalizedLink[]) => {
   return bucket;
 
 };
+
 
 
 
